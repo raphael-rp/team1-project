@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Add Workout</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>Add Workout</h1>
+</header>
+
+<nav>
+    <a href="index.html">Dashboard</a>
+    <a href="add.html">Add Workout</a>
+</nav>
+
+<div class="container">
+
+    <h2>Add Workout</h2>
+
+    <select id="activity">
+        <option value="Running">Running</option>
+        <option value="Gym">Gym</option>
+        <option value="Cycling">Cycling</option>
+        <option value="Swimming">Swimming</option>
+    </select>
+
+    <input type="text" id="newType" placeholder="Or add new workout type">
+
+    <input type="number" id="minutes" placeholder="Minutes">
+
+    <input type="date" id="date">
+
+    <input type="time" id="time">
+
+    <button onclick="saveWorkout()">Save Workout</button>
+
+    <p id="msg"></p>
+
+</div>
+
+<script>
+function saveWorkout() {
+    let activity = document.getElementById("newType").value.trim()
+        || document.getElementById("activity").value;
+
+    let minutes = document.getElementById("minutes").value;
+    let date = document.getElementById("date").value;
+    let time = document.getElementById("time").value;
+
+    if (!activity || !minutes || !date || !time) {
+        document.getElementById("msg").innerText = "Please fill all fields!";
+        return;
+    }
+
+    let data = JSON.parse(localStorage.getItem("workouts")) || [];
+
+    data.push({
+        activity,
+        minutes,
+        date,
+        time
+    });
+
+    localStorage.setItem("workouts", JSON.stringify(data));
+
+    window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
