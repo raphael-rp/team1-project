@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workout History</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+table th, table td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:center;
+}
+
+table th{
+    background:#22c55e;
+    color:white;
+}
+
+.searchBox{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+.searchBox input,
+.searchBox select{
+    flex:1;
+}
+
+.actionBtn{
+    width:auto;
+    padding:8px 15px;
+    margin:2px;
+}
+
+.edit{
+    background:#3b82f6;
+}
+
+.delete{
+    background:#ef4444;
+}
+
+.edit:hover{
+    background:#2563eb;
+}
+
+.delete:hover{
+    background:#dc2626;
+}
+
+#empty{
+    text-align:center;
+    margin-top:20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+<h1>Workout History</h1>
+</header>
+
+<nav>
+<a href="index.html">Dashboard</a>
+<a href="add.html">Add Workout</a>
+<a href="history.html">History</a>
+<a href="bmi.html">BMI</a>
+</nav>
+
+<div class="container">
+
+<h2>Workout History</h2>
+
+<div class="searchBox">
+
+<input
+type="text"
+id="search"
+placeholder="Search Exercise..."
+onkeyup="renderTable()">
+
+<select id="filter" onchange="renderTable()">
+
+<option value="all">All</option>
+<option value="Running">Running</option>
+<option value="Gym">Gym</option>
+<option value="Cycling">Cycling</option>
+<option value="Swimming">Swimming</option>
+
+</select>
+
+</div>
+
+<div id="tableArea"></div>
+
+</div>
+
+<script>
+
+function getWorkouts(){
+    return JSON.parse(localStorage.getItem("workouts")) || [];
+}
+
+function saveWorkouts(data){
+    localStorage.setItem("workouts",JSON.stringify(data));
+}
+
+function deleteWorkout(index){
+
+    if(confirm("Delete this workout?")){
+
+        let data=getWorkouts();
+
+        data.splice(index,1);
+
+        saveWorkouts(data);
+
+        renderTable();
+
+    }
+
+}
+
+function editWorkout(index){
+
+    let data=getWorkouts();
+
+    let item=data[index];
+
+    let newActivity=prompt("Exercise",item.activity);
+
+    if(newActivity===null) return;
+
+    let newMinutes=prompt("Minutes",item.minutes);
+
+    if(newMinutes===null) return;
+
+    let newDate=prompt("Date",item.date);
+
+    if(newDate===null) return;
+
+    let newTime=prompt("Time",item.time);
+
+    if(newTime===null) return;
+
+    item.activity=newActivity;
+    item.minutes=newMinutes;
+    item.date=newDate;
+    item.time=newTime;
+
+    saveWorkouts(data);
+
+    renderTable();
+
+}
+
+function renderTable(){
+
+    let workouts=getWorkouts();
+
+    let keyword=document.getElementById("search").value.toLowerCase();
+
+    let filter=document.getElementById("filter").value;
+
+    workouts=workouts.filter(w=>{
+
+        let searchMatch=w.activity.toLowerCase().includes(keyword);
+
+        let filterMatch=(filter==="all") || (w.activity===filter);
+
+        return searchMatch && filterMatch;
+
+    });
+
+    if(workouts.length===0){
+
+        document.getElementById("tableArea").innerHTML=
+
+        "<p id='empty'>No workouts found.</p>";
+
+        return;
+
+    }
+
+    let html="";
+
+    html+="<table>";
+
+    html+="<tr>";
+
+    html+="<th>Exercise</th>";
+
+    html+="<th>Minutes</th>";
+
+    html+="<th>Date</th>";
+
+    html+="<th>Time</th>";
+
+    html+="<th>Action</th>";
+
+    html+="</tr>";
+
+    workouts.forEach((w,index)=>{
+
+        html+=`
+
+        <tr>
+
+        <td>${w.activity}</td>
+
+        <td>${w.minutes}</td>
+
+        <td>${w.date}</td>
+
+        <td>${w.time}</td>
+
+        <td>
+
+        <button class="actionBtn edit"
+        onclick="editWorkout(${index})">
+
+        Edit
+
+        </button>
+
+        <button class="actionBtn delete"
+        onclick="deleteWorkout(${index})">
+
+        Delete
+
+        </button>
+
+        </td>
+
+        </tr>
+
+        `;
+
+    });
+
+    html+="</table>";
+
+    document.getElementById("tableArea").innerHTML=html;
+
+}
+
+renderTable();
+
+</script>
+
+</body>
+</html>
