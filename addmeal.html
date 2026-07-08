@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Meal</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<header>
+<h1>Add Meal</h1>
+</header>
+
+<nav>
+<a href="index.html">Dashboard</a>
+<a href="add.html">Add Workout</a>
+<a href="Calorie.html">Calorie Tracker</a>
+</nav>
+
+<div class="container">
+
+<h2>Add New Meal</h2>
+
+<label>Meal Name</label>
+<input type="text" id="meal" required>
+
+<label>Calories</label>
+<input type="number" id="calories" min="0" required>
+
+<label>Date</label>
+<input type="date" id="date" required>
+
+<button onclick="saveMeal()">
+Save Meal
+</button>
+
+</div>
+
+<script>
+
+const today = new Date().toISOString().split("T")[0];
+document.getElementById("date").max = today;
+
+function saveMeal(){
+
+let meals = JSON.parse(localStorage.getItem("meals")) || [];
+
+meals.push({
+
+meal:document.getElementById("meal").value,
+
+calories:Number(document.getElementById("calories").value),
+
+date:document.getElementById("date").value
+
+});
+
+localStorage.setItem("meals",JSON.stringify(meals));
+
+alert("Meal Added!");
+
+window.location="foodhistory.html";
+
+}
+
+</script>
+
+</body>
+</html>
