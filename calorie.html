@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calorie Tracker</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+.button-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    margin-top:30px;
+}
+
+.button-grid button{
+    padding:18px;
+    font-size:18px;
+    font-weight:bold;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    background:#22c55e;
+    color:white;
+    transition:0.3s;
+}
+
+.button-grid button:hover{
+    background:#16a34a;
+    transform:translateY(-3px);
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+<h1>Calorie Tracker</h1>
+</header>
+
+<nav>
+<a href="index.html">Dashboard</a>
+<a href="add.html">Add Workout</a>
+<a href="Calorie.html">Calorie Tracker</a>
+</nav>
+
+<div class="container">
+
+<h2>Meal Management</h2>
+
+<p>
+Manage your daily meals and calorie intake.
+</p>
+
+<div class="button-grid">
+
+<button onclick="location.href='addMeal.html'">
+➕ Add Meal
+</button>
+
+<button onclick="location.href='editMeal.html'">
+✏️ Edit / Delete Meals
+</button>
+
+<button onclick="location.href='foodhistory.html'">
+📜 Food History
+</button>
+
+<button onclick="location.href='searchMeal.html'">
+🔍 Search Meals
+</button>
+
+</div>
+
+</div>
+
+</body>
+</html>
