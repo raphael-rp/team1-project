@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LaunchLab - Rewards Center</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; background: #111827; color: white; }
+        .card { background: #1f2937; padding: 25px; border-radius: 12px; max-inline-size: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .stat { font-size: 1.2rem; margin: 10px 0; }
+        .highlight { color: #10b981; font-weight: bold; }
+        button { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; margin-top: 15px; }
+        button:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+
+    <h1>🏆User Status</h1>
+    <p>This panel showcases how your teammates' actions grant XP automatically.</p>
+
+    <div class="card">
+        <h2>Player Profile: <span id="username">TestAthlete</span></h2>
+        <div class="stat">⭐ Current Level: <span id="level" class="highlight">1</span></div>
+        <div class="stat">✨ Experience Points: <span id="xp" class="highlight">0</span> / 100 XP</div>
+        <div class="stat">🔥 Daily Streak: <span id="streak" class="highlight">0</span> days</div>
+        
+        <button onclick="simulateWorkout()">Simulate Logged Workout (+40 XP)</button>
+    </div>
+
+    <script>
+        const mockUserId = 1;
+
+        async function loadStats() {
+            const response = await fetch(`/api/gamification/${mockUserId}`);
+            const data = await response.json();
+            document.getElementById('level').innerText = data.level;
+            document.getElementById('xp').innerText = data.xp;
+            document.getElementById('streak').innerText = data.streak;
+        }
+
+        async function simulateWorkout() {
+            await fetch('/api/gamification/add-xp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: mockUserId, xpGained: 40 })
+            });
+            loadStats(); 
+        }
+
+        window.onload = loadStats;
+    </script>
+</body>
+</html>
