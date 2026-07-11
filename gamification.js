@@ -11,19 +11,34 @@ function getGamificationData() {
     if (!allData[currentUser]) {
         // Initialize a brand new user profile
         allData[currentUser] = {
-            xp: 0,
-            level: 1,
-            streak: 0,
-            lastDate: null,
-            unlockedBadges: [],
-            completedChallenges: []
-        };
-    }
-    return allData;
-}
+    xp: 0,
+    level: 1,
+
+    streak: 0,
+    lastDate: null,
+
+    meals: 0,
+    workouts: 0,
+    waterGoals: 0,
+    bmiUpdates: 0,
+
+    unlockedBadges: [],
+    completedChallenges: [],
+
+    lastQuestReset: new Date().toISOString().split("T")[0]
+};
 
 function saveGamificationData(data) {
     localStorage.setItem("gamification", JSON.stringify(data));
+}
+
+function resetDailyQuests(stats) {
+
+    let today = new Date().toISOString().split("T")[0];
+    if (stats.lastQuestReset !== today) {
+        stats.completedChallenges = [];
+        stats.lastQuestReset = today;
+    }
 }
 
 // 2. Streaks Calculator
@@ -143,6 +158,7 @@ function addXP(amount, actionName) {
 
     let data = getGamificationData();
     let stats = data[currentUser];
+    resetDailyQuests(stats);
 
     updateStreak(stats);
     stats.xp += amount;
