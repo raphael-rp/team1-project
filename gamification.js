@@ -43,35 +43,52 @@ function resetDailyQuests(stats) {
 
 // 2. Streaks Calculator
 function updateStreak(stats) {
-    let today = new Date().toISOString().split("T")[0];
-    
-    if (stats.lastDate) {
-        let lastDate = new Date(stats.lastDate);
-        let currentDate = new Date(today);
-        let diffTime = currentDate - lastDate;
-        let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 1) {
-            stats.streak += 1;
-        } else if (diffDays > 1) {
-            stats.streak = 1; // streak is broken - reset to 0
-        }
+    let today = new Date().toISOString().split("T")[0];
+
+    // First activity ever
+    if (!stats.lastDate) {
+        stats.streak = 1;
+        stats.lastDate = today;
+        return;
+    }
+
+    // Already counted today
+    if (stats.lastDate === today) {
+        return;
+    }
+    let last = new Date(stats.lastDate);
+    let now = new Date(today);
+
+    let diffDays = Math.floor(
+        (now - last) / (1000 * 60 * 60 * 24)
+    );
+    if (diffDays === 1) {
+        stats.streak++;
     } else {
-        stats.streak = 1; // first day streak 
+        stats.streak = 1;
     }
     stats.lastDate = today;
 }
 
 // 3.badge(checks and unlocks milestones)
 const AVAILABLE_BADGES = [
-    { id: "first_workout", name: "🏅 First Step", desc: "Log your first workout activity", xp: 50 },
-    { id: "streak_3", name: "🔥 Consistent", desc: "Maintain a 3-day workout streak", xp: 150 },
-    { id: "streak_7", name: "⚡ One Week Strong", desc: "Maintain a 7-day workout streak", xp: 200 },
-    { id: "level_5", name: "👑 Elite Athlete", desc: "Reach Level 5 in The Quest Zone", xp: 250 },
-    { id: "level_10", name: "🏆 Fitness Legend", desc: "Reach Level 10 in The Quest Zone", xp: 300  },
-    { id: "calorie_cadet", name: "🍎 Calorie Cadet", desc: "Log your first meal in the tracker", xp: 50 },
-    { id: "meal_master", name: "🥗 Meal Master", desc: "Log 50 meals", xp: 100 },
-    { id: "nutrition_ninja", name: "🥑 Nutrition Ninja", desc: "Log 100 meals", xp: 250 },
+    { id: "first_workout", name: "🏅First Step", desc: "Complete your first workout" },
+    { id: "workout_10", name: "💪Workout Warrior", desc: "Complete 10 workouts" },
+    { id: "workout_50", name: "🏃Fitness Fanatic", desc: "Complete 50 workouts" },
+    { id: "calorie_cadet", name: "🍎Calorie Cadet", desc: "Log your first meal" },
+    { id: "meal_master", name: "🥗Meal Master", desc: "Log 50 meals" },
+    { id: "nutrition_ninja", name: "🥑Nutrition Ninja", desc: "Log 100 meals" },
+    { id: "water_7", name: "💧Hydration Hero", desc: "Reach your water goal 7 times" },
+    { id: "bmi_tracker", name: "⚖BMI Beginner", desc: "Save your BMI once" },
+
+    { id: "streak_3", name: "🔥Consistent", desc: "Maintain a 3-day streak" },
+    { id: "streak_7", name: "⚡One Week Strong", desc: "Maintain a 7-day streak" },
+    { id: "streak_30", name: "🌟Unstoppable", desc: "Maintain a 30-day streak" },
+
+    { id: "level_5", name: "👑Elite Athlete", desc: "Reach Level 5" },
+    { id: "level_10", name: "🏆Fitness Legend", desc: "Reach Level 10" },
+    { id: "level_20", name: "🚀Quest Master", desc: "Reach Level 20" }
 ];
 
 const DAILY_QUESTS = [
@@ -81,74 +98,44 @@ const DAILY_QUESTS = [
 ];
 
 function checkAndUnlockBadges(stats) {
+
     let unlockedAny = false;
     let newBadges = [];
-    
-    // First Workout
-    if (stats.streak >= 1 && !stats.unlockedBadges.includes("first_workout")) {
-        stats.unlockedBadges.push("first_workout");
-        stats.xp += 50;
-        newBadges.push("🏅 First Step");
-        unlockedAny = true;
+
+    function unlock(id, name) {
+        if (!stats.unlockedBadges.includes(id)) {
+            stats.unlockedBadges.push(id);
+            stats.xp += 100;      // Bonus XP for every badge
+            newBadges.push(name);
+            unlockedAny = true;
+        }
     }
 
-    // 3-Day Streak
-    if (stats.streak >= 3 && !stats.unlockedBadges.includes("streak_3")) {
-        stats.unlockedBadges.push("streak_3");
-        stats.xp += 150;
-        newBadges.push("🔥 Consistent");
-        unlockedAny = true;
-    }
+    // Workout Badges
+    if (stats.workouts >= 1) unlock("first_workout", "🏅 First Step");
+    if (stats.workouts >= 10) unlock("workout_10", "💪 Workout Warrior");
+    if (stats.workouts >= 50) unlock("workout_50", "🏃 Fitness Fanatic");
+    // Meal Badges
+    if (stats.meals >= 1) unlock("calorie_cadet", "🍎 Calorie Cadet");
+    if (stats.meals >= 50) unlock("meal_master", "🥗 Meal Master");
+    if (stats.meals >= 100) unlock("nutrition_ninja", "🥑 Nutrition Ninja");
+    // Water Badge
+    if (stats.waterGoals >= 7) unlock("water_7", "💧 Hydration Hero");
+    // BMI Badge
+    if (stats.bmiUpdates >= 1) unlock("bmi_tracker", "⚖ BMI Beginner");
+    // Streak Badges
+    if (stats.streak >= 3) unlock("streak_3", "🔥 Consistent");
+    if (stats.streak >= 7) unlock("streak_7", "⚡ One Week Strong");
+    if (stats.streak >= 30) unlock("streak_30", "🌟 Unstoppable");
+    // Level Badges
+    if (stats.level >= 5) unlock("level_5", "👑 Elite Athlete");
+    if (stats.level >= 10) unlock("level_10", "🏆 Fitness Legend");
+    if (stats.level >= 20) unlock("level_20", "🚀 Quest Master");
 
-    // 7-Day Streak
-    if (stats.streak >= 7 && !stats.unlockedBadges.includes("streak_7")) {
-        stats.unlockedBadges.push("streak_7");
-        stats.xp += 200;
-        newBadges.push("⚡ One Week Strong");
-        unlockedAny = true;
-    }
-
-    // Level 5
-    if (stats.level >= 5 && !stats.unlockedBadges.includes("level_5")) {
-        stats.unlockedBadges.push("level_5");
-        stats.xp += 250;
-        newBadges.push("👑 Elite Athlete");
-        unlockedAny = true;
-    }
-
-    // Level 10
-    if (stats.level >= 10 && !stats.unlockedBadges.includes("level_10")) {
-        stats.unlockedBadges.push("level_10");
-        stats.xp += 300;
-        newBadges.push("🏆 Fitness Legend");
-        unlockedAny = true;
-    }
-
-    // First Meal Logged
-    if (stats.meals >= 1 && !stats.unlockedBadges.includes("calorie_cadet")) {
-        stats.unlockedBadges.push("calorie_cadet");
-        stats.xp += 50;
-        newBadges.push("🍎 Calorie Cadet");
-        unlockedAny = true;
-    }
-
-    // 50 Meals Logged
-    if (stats.meals >= 50 && !stats.unlockedBadges.includes("meal_master")) {
-        stats.unlockedBadges.push("meal_master");
-        stats.xp += 100;
-        newBadges.push("🥗 Meal Master");
-        unlockedAny = true;
-    }
-
-    // 100 Meals Logged
-    if (stats.meals >= 100 && !stats.unlockedBadges.includes("nutrition_ninja")) {
-        stats.unlockedBadges.push("nutrition_ninja");
-        stats.xp += 250;
-        newBadges.push("🥑 Nutrition Ninja");
-        unlockedAny = true;
-    }
-
-    return { unlockedAny, newBadges };
+    return {
+        unlockedAny,
+        newBadges
+    };
 }
 
 // 4. MAIN ACTION TRIGGER: Call this from teammates' scripts to award points
@@ -260,6 +247,62 @@ function claimDailyQuest(questId) {
     saveGamificationData(data);
 
     addXP(quest.reward, quest.action);
+}
+
+// ===============================
+// TEAMMATE INTEGRATION FUNCTIONS
+// ===============================
+
+// Call this after a workout is successfully saved
+function recordWorkout() {
+    let data = getGamificationData();
+    let user = getCurrentUser();
+
+    if (!user) return;
+
+    data[user].workouts++;
+    saveGamificationData(data);
+
+    addXP(30, "completing a workout");
+}
+
+// Call this after a meal is logged
+function recordMeal() {
+    let data = getGamificationData();
+    let user = getCurrentUser();
+
+    if (!user) return;
+
+    data[user].meals++;
+    saveGamificationData(data);
+
+    addXP(15, "logging a meal");
+}
+
+// Call this when today's water goal is completed
+function recordWaterGoal() {
+    let data = getGamificationData();
+    let user = getCurrentUser();
+
+    if (!user) return;
+
+    data[user].waterGoals++;
+    saveGamificationData(data);
+
+    addXP(20, "reaching today's water goal");
+}
+
+// Call this whenever BMI is updated
+function recordBMI() {
+    let data = getGamificationData();
+    let user = getCurrentUser();
+
+    if (!user) return;
+
+    data[user].bmiUpdates++;
+    saveGamificationData(data);
+
+    addXP(10, "updating BMI");
 }
 
 // Shared Toast Notification UI Builder
