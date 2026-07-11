@@ -175,7 +175,7 @@
             <thead>
                 <tr>
                     <th>User</th>
-                    <th>Hero Athlete</th>
+                    <th>User</th>
                     <th>Level</th>
                     <th>Total XP</th>
                 </tr>
@@ -189,31 +189,14 @@
 </div>
 
 <script>
-    requireLogin();
-
-    // Challenge Configuration mapping
-    const QUESTS = [
-        { id: "quest_workout", title: "Complete any workout", reward: 40, action: "completing a workout" },
-        { id: "quest_calorie", title: "Log a daily healthy meal", reward: 25, action: "logging a meal" },
-        { id: "quest_water", title: "Hit your daily hydration goal", reward: 20, action: "drinking enough water" }
-    ];
-
-    // Mock Competitor database to show a realistic leaderboard standings ( May remove )
-    const COMPETITORS = [
-        { name: "Raphael_Secure", level: 4, totalXP: 380 },
-        { name: "WeiHan_BMIMaster", level: 3, totalXP: 290 },
-        { name: "Matt_CaloriePro", level: 3, totalXP: 210 },
-        { name: "Akmal_Hydration", level: 2, totalXP: 120 }
-    ];
-
-    function loadDashboard() {
+     requireLogin();
         let currentUser = getCurrentUser();
         document.getElementById("userEmail").innerText = currentUser;
 
         let allData = getGamificationData();
         let stats = allData[currentUser];
 
-        // 1. Profile Stats
+        // 1. Core Profile Stats
         document.getElementById("displayLevel").innerText = stats.level;
         document.getElementById("displayXP").innerText = stats.xp;
         let nextLevelXP = stats.level * 100;
@@ -223,7 +206,7 @@
         let percentage = (stats.xp / nextLevelXP) * 100;
         document.getElementById("xpBar").style.width = percentage + "%";
 
-        // 2. Load Achievements
+        // 2. Load Achievements Grid
         const badgesContainer = document.getElementById("badgesContainer");
         badgesContainer.innerHTML = AVAILABLE_BADGES.map(badge => {
             let isUnlocked = stats.unlockedBadges.includes(badge.id);
@@ -236,9 +219,9 @@
             `;
         }).join('');
 
-        // 3. Load Active Quests
+        // 3. Load Active Quests from centralized source
         const challengeContainer = document.getElementById("challengeContainer");
-        challengeContainer.innerHTML = QUESTS.map(quest => {
+        challengeContainer.innerHTML = DAILY_QUESTS.map(quest => {
             let isClaimed = stats.completedChallenges && stats.completedChallenges.includes(quest.id);
             return `
                 <div class="challenge-item">
@@ -248,39 +231,24 @@
                     </div>
                     <button class="challenge-btn" 
                         ${isClaimed ? 'disabled' : ''} 
-                        onclick="claimChallenge('${quest.id}', ${quest.reward}, '${quest.action}')">
+                        onclick="claimQuest('${quest.id}')">
                         ${isClaimed ? '✓ Claimed' : 'Claim Reward'}
                     </button>
                 </div>
             `;
         }).join('');
 
-        // 4. Load Leaderboard Table (Compiles mock competitors + your live user) / OR JUST LIVE USER
-        // Calculate dynamic total accumulated XP of live logged-in user
-        let userTotalXP = 0;
-        for (let l = 1; l < stats.level; l++) {
-            userTotalXP += l * 100;
-        }
-        userTotalXP += stats.xp;
-
-        let userLeaderboardProfile = {
-            name: currentUser.split("@")[0] + " (You)",
-            level: stats.level,
-            totalXP: userTotalXP,
-            isUser: true
-        };
-
-        // Combine, sort by total XP, and render
-        let fullList = [...COMPETITORS, userLeaderboardProfile];
-        fullList.sort((a, b) => b.totalXP - a.totalXP);
-
+        // 4. Load Dynamic Live Leaderboard
+        let leaderboard = getLiveLeaderboard();
         const leaderboardContainer = document.getElementById("leaderboardContainer");
-        leaderboardContainer.innerHTML = fullList.map((competitor, idx) => {
+        
+        leaderboardContainer.innerHTML = leaderboard.map((competitor, idx) => {
+            let isSelf = competitor.email === currentUser;
             return `
-                <tr class="leaderboard-row ${competitor.isUser ? 'highlight-user' : ''}">
+                <tr class="leaderboard-row ${isSelf ? 'highlight-user' : ''}">
                     <td class="rank-cell">#${idx + 1}</td>
-                    <td style="font-weight: ${competitor.isUser ? 'bold' : 'normal'}">
-                        ${competitor.name}
+                    <td style="font-weight: ${isSelf ? 'bold' : 'normal'}">
+                        ${competitor.name} ${isSelf ? '(You)' : ''}
                     </td>
                     <td>Lvl ${competitor.level}</td>
                     <td>${competitor.totalXP} XP</td>
@@ -289,26 +257,13 @@
         }).join('');
     }
 
-    // Function to handle claiming a daily challenge
-    function claimChallenge(id, reward, action) {
-        let currentUser = getCurrentUser();
-        let allData = getGamificationData();
-        let stats = allData[currentUser];
-
-        if (!stats.completedChallenges) {
-            stats.completedChallenges = [];
-        }
-
-        // Save quest completion status
-        stats.completedChallenges.push(id);
-        saveGamificationData(allData);
-
-        // add actual calculated XP using central engine logic
-        addXP(reward, action);
+    // Handle claiming quest rewards
+    function claimQuest(questId) {
+        claimDailyQuest(questId);
         loadDashboard();
     }
 
-    // external updts
+    // Listens for external events
     window.addEventListener('xpUpdated', loadDashboard);
 
     window.onload = loadDashboard;
