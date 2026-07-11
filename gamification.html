@@ -189,85 +189,105 @@
 </div>
 
 <script>
-     requireLogin();
-        let currentUser = getCurrentUser();
-        document.getElementById("userEmail").innerText = currentUser;
+function loadDashboard() {
 
-        let allData = getGamificationData();
-        let stats = allData[currentUser];
+    requireLogin();
 
-        // 1. Core Profile Stats
-        document.getElementById("displayLevel").innerText = stats.level;
-        document.getElementById("displayXP").innerText = stats.xp;
-        let nextLevelXP = stats.level * 100;
-        document.getElementById("displayNextXP").innerText = nextLevelXP;
-        document.getElementById("displayStreak").innerText = stats.streak;
+    let currentUser = getCurrentUser();
+    document.getElementById("userEmail").innerText = currentUser;
 
-        let percentage = (stats.xp / nextLevelXP) * 100;
-        document.getElementById("xpBar").style.width = percentage + "%";
+    let allData = getGamificationData();
+    let stats = allData[currentUser];
 
-        // 2. Load Achievements Grid
-        const badgesContainer = document.getElementById("badgesContainer");
-        badgesContainer.innerHTML = AVAILABLE_BADGES.map(badge => {
-            let isUnlocked = stats.unlockedBadges.includes(badge.id);
-            return `
-                <div class="badge-item ${isUnlocked ? 'unlocked' : ''}">
-                    <div class="badge-icon">${badge.name.split(' ')[0]}</div>
-                    <div class="badge-name">${badge.name.split(' ').slice(1).join(' ')}</div>
-                    <div class="badge-desc">${badge.desc}</div>
-                </div>
-            `;
-        }).join('');
+    // Profile
+    document.getElementById("displayLevel").innerText = stats.level;
+    document.getElementById("displayXP").innerText = stats.xp;
 
-        // 3. Load Active Quests from centralized source
-        const challengeContainer = document.getElementById("challengeContainer");
-        challengeContainer.innerHTML = DAILY_QUESTS.map(quest => {
-            let isClaimed = stats.completedChallenges && stats.completedChallenges.includes(quest.id);
-            return `
-                <div class="challenge-item">
-                    <div class="challenge-info">
-                        <span class="challenge-title">${quest.title}</span>
-                        <span class="challenge-reward">+${quest.reward} XP Reward</span>
-                    </div>
-                    <button class="challenge-btn" 
-                        ${isClaimed ? 'disabled' : ''} 
-                        onclick="claimQuest('${quest.id}')">
-                        ${isClaimed ? '✓ Claimed' : 'Claim Reward'}
-                    </button>
-                </div>
-            `;
-        }).join('');
+    let nextLevelXP = stats.level * 100;
+    document.getElementById("displayNextXP").innerText = nextLevelXP;
+    document.getElementById("displayStreak").innerText = stats.streak;
 
-        // 4. Load Dynamic Live Leaderboard
-        let leaderboard = getLiveLeaderboard();
-        const leaderboardContainer = document.getElementById("leaderboardContainer");
-        
-        leaderboardContainer.innerHTML = leaderboard.map((competitor, idx) => {
-            let isSelf = competitor.email === currentUser;
-            return `
-                <tr class="leaderboard-row ${isSelf ? 'highlight-user' : ''}">
-                    <td class="rank-cell">#${idx + 1}</td>
-                    <td style="font-weight: ${isSelf ? 'bold' : 'normal'}">
-                        ${competitor.name} ${isSelf ? '(You)' : ''}
-                    </td>
-                    <td>Lvl ${competitor.level}</td>
-                    <td>${competitor.totalXP} XP</td>
-                </tr>
-            `;
-        }).join('');
-    }
+    let percentage = (stats.xp / nextLevelXP) * 100;
+    document.getElementById("xpBar").style.width = percentage + "%";
 
-    // Handle claiming quest rewards
-    function claimQuest(questId) {
-        claimDailyQuest(questId);
-        loadDashboard();
-    }
+    // Badges
+    const badgesContainer = document.getElementById("badgesContainer");
 
-    // Listens for external events
-    window.addEventListener('xpUpdated', loadDashboard);
+    badgesContainer.innerHTML = AVAILABLE_BADGES.map(badge => {
 
-    window.onload = loadDashboard;
+        let unlocked = stats.unlockedBadges.includes(badge.id);
+
+        return `
+        <div class="badge-item ${unlocked ? "unlocked" : ""}">
+            <div class="badge-icon">${badge.name.split(" ")[0]}</div>
+            <div class="badge-name">${badge.name.split(" ").slice(1).join(" ")}</div>
+            <div class="badge-desc">${badge.desc}</div>
+        </div>
+        `;
+
+    }).join("");
+
+    // Daily Quests
+    const challengeContainer = document.getElementById("challengeContainer");
+
+    challengeContainer.innerHTML = DAILY_QUESTS.map(quest=>{
+
+        let claimed =
+        stats.completedChallenges.includes(quest.id);
+
+        return `
+        <div class="challenge-item">
+
+            <div class="challenge-info">
+                <span class="challenge-title">${quest.title}</span>
+                <span class="challenge-reward">
+                    +${quest.reward} XP
+                </span>
+            </div>
+
+            <button
+                class="challenge-btn"
+                ${claimed ? "disabled" : ""}
+                onclick="claimQuest('${quest.id}')">
+
+                ${claimed ? "Claimed ✓" : "Claim"}
+
+            </button>
+
+        </div>
+        `;
+
+    }).join("");
+
+    // Leaderboard
+    let leaderboard = getLiveLeaderboard();
+
+    document.getElementById("leaderboardContainer").innerHTML =
+    leaderboard.map((user,index)=>{
+
+        let self = user.email===currentUser;
+
+        return `
+        <tr class="${self ? "highlight-user" : ""}">
+            <td>#${index+1}</td>
+            <td>${user.name}${self ? " (You)" : ""}</td>
+            <td>${user.level}</td>
+            <td>${user.totalXP}</td>
+        </tr>
+        `;
+
+    }).join("");
+
+}
+
+function claimQuest(id){
+    claimDailyQuest(id);
+    loadDashboard();
+}
+
+window.addEventListener("xpUpdated",loadDashboard);
+
+window.onload = loadDashboard;
 </script>
-
 </body>
 </html>
