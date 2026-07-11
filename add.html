@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="auth.js"></script>
+<script src="gamification.js"></script>
 <title>Add Workout</title>
 
 <link rel="stylesheet" href="style.css">
@@ -59,7 +61,8 @@ function saveWorkout() {
     }
 
     let data = JSON.parse(localStorage.getItem("workouts")) || [];
-
+   
+}
     data.push({
         activity,
         minutes,
@@ -68,9 +71,14 @@ function saveWorkout() {
     });
 
     localStorage.setItem("workouts", JSON.stringify(data));
+// Award 40 XP for completing a workout
+    if (typeof addXP === 'function') {
+    addXP(40, "completing a workout");
+}
 
     window.location.href = "index.html";
 }
+    
 </script>
 
 </body>
