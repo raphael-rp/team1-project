@@ -208,10 +208,12 @@ function getLiveLeaderboard() {
 
     // Fallback peer competitors to populate empty slots during demonstration
     const fallbackPeers = [
-        { name: "Raphael_Secure", level: 3, totalXP: 250, isLiveUser: false },
-        { name: "WeiHan_BMIMaster", level: 2, totalXP: 180, isLiveUser: false },
-        { name: "Matt_CaloriePro", level: 2, totalXP: 130, isLiveUser: false },
-        { name: "Akmal_Hydrate", level: 1, totalXP: 45, isLiveUser: false }
+        { name: "Raphael", level: 3, totalXP: 250, isLiveUser: false },
+        { name: "WeiHan", level: 2, totalXP: 180, isLiveUser: false },
+        { name: "Mattew", level: 2, totalXP: 130, isLiveUser: false },
+        { name: "ZiYing", level: 1, totalXP: 100, isLiveUser: false },
+        { name: "Akmal", level: 1, totalXP: 90, isLiveUser: false },
+        { name: "YongEn", level: 1, totalXP: 50, isLiveUser: false }
     ];
 
     // Filter out bots with names overlapping existing live users
