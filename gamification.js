@@ -59,6 +59,12 @@ const AVAILABLE_BADGES = [
     { id: "nutrition_ninja", name: "🥑 Nutrition Ninja", desc: "Log 100 meals", xp: 250 },
 ];
 
+const DAILY_QUESTS = [
+    { id: "quest_workout", title: "Complete any workout", reward: 40, action: "completing a workout" },
+    { id: "quest_calorie", title: "Log a daily healthy meal", reward: 25, action: "logging a meal" },
+    { id: "quest_water", title: "Hit your daily hydration goal", reward: 20, action: "drinking enough water" }
+];
+
 function checkAndUnlockBadges(stats) {
     let unlockedAny = false;
     let newBadges = [];
@@ -169,7 +175,78 @@ function addXP(amount, actionName) {
     showToast(toastMsg);
 }
 
-// 5. Shared Toast Notification UI Builder
+// 6. Live Leaderboard Compiler (Reads actual user list + fallbacks fr demo)
+function getLiveLeaderboard() {
+    let registeredUsers = JSON.parse(localStorage.getItem("users")) || [];
+    let gamificationDb = JSON.parse(localStorage.getItem("gamification")) || {};
+    
+    let leaderboard = [];
+
+    // compile active scores from all registered users
+    registeredUsers.forEach(user => {
+        let email = user.email;
+        let stats = gamificationDb[email] || { xp: 0, level: 1, streak: 0 };
+        
+        // Calculate cumulative total XP
+        let totalXP = 0;
+        for (let i = 1; i < stats.level; i++) {
+            totalXP += i * 100;
+        }
+        totalXP += stats.xp;
+
+        leaderboard.push({
+            name: email.split("@")[0], // Use email handle as name
+            email: email,
+            level: stats.level,
+            totalXP: totalXP,
+            isLiveUser: true
+        });
+    });
+
+    // Fallback peer competitors to populate empty slots during demonstration
+    const fallbackPeers = [
+        { name: "Raphael_Secure", level: 3, totalXP: 250, isLiveUser: false },
+        { name: "WeiHan_BMIMaster", level: 2, totalXP: 180, isLiveUser: false },
+        { name: "Matt_CaloriePro", level: 2, totalXP: 130, isLiveUser: false },
+        { name: "Akmal_Hydrate", level: 1, totalXP: 45, isLiveUser: false }
+    ];
+
+    // Filter out bots with names overlapping existing live users
+    fallbackPeers.forEach(bot => {
+        if (!leaderboard.some(user => user.name.toLowerCase() === bot.name.toLowerCase())) {
+            leaderboard.push(bot);
+        }
+    });
+
+    // Sort leaderboard desc by overall XP
+    leaderboard.sort((a, b) => b.totalXP - a.totalXP);
+    return leaderboard;
+}
+
+// Quest System Claim Logic
+function claimDailyQuest(questId) {
+    let currentUser = getCurrentUser();
+    if (!currentUser) return;
+
+    let data = getGamificationData();
+    let stats = data[currentUser];
+
+    if (!stats.completedChallenges) {
+        stats.completedChallenges = [];
+    }
+
+    if (stats.completedChallenges.includes(questId)) return; // claimed already
+
+    let quest = DAILY_QUESTS.find(q => q.id === questId);
+    if (!quest) return;
+
+    stats.completedChallenges.push(questId);
+    saveGamificationData(data);
+
+    addXP(quest.reward, quest.action);
+}
+
+// Shared Toast Notification UI Builder
 function showToast(message) {
     let container = document.getElementById("toast-container");
     if (!container) {
