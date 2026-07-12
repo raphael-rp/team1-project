@@ -1,0 +1,560 @@
+/* ===== Tokens — Playful & Rounded ===== */
+#water-tracker-app {
+  --bg: #EAF6FB;
+  --card: #FFFFFF;
+  --ink: #163A5F;
+  --ink-soft: #6C8AA3;
+  --line: #DCEFF7;
+
+  --accent: #35C0F0;        /* sky blue - primary */
+  --accent-deep: #1C93BE;   /* shadow/pressed state for accent */
+  --water: #4DD0E8;
+  --water-light: #A8ECF6;
+
+  --mint: #4FE0B6;          /* success / goal-hit */
+  --mint-deep: #2CB891;
+  --sun: #FFB84C;           /* CTA - warm pop color */
+  --sun-deep: #E89B2C;
+  --peach: #FF8F73;         /* miss / gentle warning */
+
+  --font-display: 'Fredoka', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 20px 60px;
+  box-sizing: border-box;
+}
+
+#water-tracker-app *, #water-tracker-app *::before, #water-tracker-app *::after {
+  box-sizing: border-box;
+}
+
+body { margin: 0; background: #EAF6FB; }
+
+/* ===== Nav ===== */
+.wt-nav {
+  display: flex;
+  gap: 6px;
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 5px;
+  margin-bottom: 24px;
+}
+
+.wt-nav-link {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 13px;
+  padding: 9px 10px;
+  border-radius: 999px;
+  transition: background .15s ease, color .15s ease;
+}
+
+.wt-nav-link:hover { color: var(--accent-deep); }
+
+.wt-nav-link.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ===== Header ===== */
+.wt-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.wt-eyebrow {
+  margin: 0 0 2px;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+
+.wt-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 30px;
+}
+
+.wt-goal-btn {
+  border: 2px solid var(--line);
+  background: var(--card);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, transform .1s ease;
+}
+.wt-goal-btn:hover { border-color: var(--accent); color: var(--accent-deep); }
+.wt-goal-btn:active { transform: scale(0.96); }
+.wt-goal-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ===== Signature element: droplet mascot ===== */
+.wt-glass-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0 20px;
+}
+
+.wt-glass {
+  position: relative;
+  width: 168px;
+  height: 190px;
+  /* classic drop shape via border-radius trick */
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(45deg);
+  overflow: hidden;
+  border: 4px solid var(--ink);
+  background: linear-gradient(180deg, #FFFFFF, #EAF9FC);
+  animation: wt-bob 3.4s ease-in-out infinite;
+}
+
+.wt-glass-inner {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-45deg);
+}
+
+@keyframes wt-bob {
+  0%, 100% { transform: rotate(45deg) translateY(0); }
+  50% { transform: rotate(45deg) translateY(-6px); }
+}
+
+.wt-water {
+  position: absolute;
+  bottom: 0;
+  left: -25%;
+  width: 150%;
+  height: 0%;
+  transition: height 0.7s cubic-bezier(.22,.9,.34,1);
+  background: var(--water);
+}
+
+.wt-water::before,
+.wt-water::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 220%;
+  height: 220%;
+  background: var(--water-light);
+  opacity: 0.6;
+  border-radius: 44%;
+  transform: translate(-50%, -74%) rotate(0deg);
+  animation: wt-rotate 9s linear infinite;
+}
+.wt-water::after {
+  background: var(--accent-deep);
+  opacity: 0.3;
+  animation-duration: 13s;
+  animation-direction: reverse;
+}
+
+@keyframes wt-rotate {
+  from { transform: translate(-50%, -74%) rotate(0deg); }
+  to   { transform: translate(-50%, -74%) rotate(360deg); }
+}
+
+/* Face -- mood set via JS adding a class to #wt-face */
+.wt-face {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.wt-eyes {
+  display: flex;
+  gap: 16px;
+}
+
+.wt-eye {
+  width: 8px;
+  height: 8px;
+  background: var(--ink);
+  border-radius: 50%;
+  animation: wt-blink 4.5s ease-in-out infinite;
+}
+
+@keyframes wt-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+.wt-mouth {
+  width: 22px;
+  height: 11px;
+  border: 3px solid var(--ink);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  transition: all 0.3s ease;
+}
+
+/* mood: sad (low %) */
+.wt-face.mood-sad .wt-mouth {
+  border: 3px solid var(--ink);
+  border-bottom: none;
+  border-radius: 14px 14px 0 0;
+  height: 8px;
+}
+
+/* mood: neutral (mid %) */
+.wt-face.mood-neutral .wt-mouth {
+  border: none;
+  background: var(--ink);
+  height: 3px;
+  border-radius: 3px;
+}
+
+/* mood: happy / great uses default smile, great gets wider */
+.wt-face.mood-great .wt-mouth {
+  width: 28px;
+  height: 15px;
+}
+
+.wt-glass-readout { text-align: center; }
+
+.wt-percent {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--accent-deep);
+}
+
+.wt-of-goal {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.wt-progress-bar {
+  width: 100%;
+  max-width: 300px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+  border: 2px solid var(--card);
+  box-shadow: inset 0 1px 3px rgba(22,58,95,0.12);
+}
+
+.wt-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--water), var(--accent));
+  border-radius: 999px;
+  transition: width 0.7s cubic-bezier(.22,.9,.34,1);
+}
+
+/* ===== Quick add — gumdrop 3D buttons ===== */
+.wt-quickadd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.wt-chip {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 14px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--accent-deep);
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.wt-chip:hover { filter: brightness(1.03); }
+.wt-chip:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--accent-deep);
+}
+.wt-chip:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.wt-custom-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.wt-custom-input {
+  flex: 1;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--card);
+}
+.wt-custom-input:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+.wt-custom-submit {
+  border: none;
+  background: var(--sun);
+  color: #6B4200;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--sun-deep);
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.wt-custom-submit:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--sun-deep);
+}
+.wt-custom-submit:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.wt-confirm {
+  text-align: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--mint-deep);
+  background: #E3FBF3;
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 4px;
+}
+
+/* ===== Stats — tinted pastel cards ===== */
+.wt-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.wt-stat {
+  border: none;
+  border-radius: 18px;
+  padding: 16px 8px;
+  text-align: center;
+}
+
+.wt-stat:nth-child(1) { background: #E4F6FC; }
+.wt-stat:nth-child(2) { background: #FFF3E0; }
+.wt-stat:nth-child(3) { background: #E4FBF2; }
+
+.wt-stat-value {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 21px;
+  color: var(--ink);
+}
+
+.wt-stat-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* ===== Log ===== */
+.wt-log-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+
+.wt-log-list, .wt-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wt-log-item, .wt-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 11px 16px;
+}
+
+.wt-log-amount {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.wt-log-time {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-left: 8px;
+}
+
+.wt-log-remove {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.wt-log-remove:hover { color: var(--peach); }
+.wt-log-remove:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.wt-empty {
+  text-align: center;
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.wt-empty a { color: var(--accent-deep); }
+
+/* ===== History ===== */
+.wt-history-date {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.wt-history-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wt-history-total {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.wt-history-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.wt-history-badge.hit { background: #DCF8ED; color: var(--mint-deep); }
+.wt-history-badge.miss { background: #FFE8E1; color: #C2532F; }
+
+/* ===== Dialog ===== */
+.wt-dialog {
+  border: none;
+  border-radius: 22px;
+  padding: 0;
+  max-width: 320px;
+  width: calc(100% - 40px);
+}
+.wt-dialog::backdrop { background: rgba(22, 58, 95, 0.35); }
+
+.wt-dialog-form {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: 'Nunito', sans-serif;
+  color: #163A5F;
+}
+
+.wt-dialog-form h2 {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  margin: 0 0 4px;
+  font-size: 19px;
+}
+
+.wt-dialog-form label { font-size: 13px; font-weight: 700; color: #6C8AA3; }
+
+.wt-dialog-form input {
+  border: 2px solid #DCEFF7;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wt-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wt-dialog-cancel {
+  border: none;
+  background: transparent;
+  color: #6C8AA3;
+  font-weight: 800;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+
+.wt-dialog-save {
+  border: none;
+  background: #35C0F0;
+  color: #fff;
+  font-weight: 800;
+  padding: 10px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #1C93BE;
+}
+.wt-dialog-save:active { transform: translateY(4px); box-shadow: 0 0 0 #1C93BE; }
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .wt-water::before, .wt-water::after { animation: none; }
+  .wt-water { transition: none; }
+  .wt-glass { animation: none; }
+  .wt-eye { animation: none; }
+}
+
+/* ===== Small screens ===== */
+@media (max-width: 360px) {
+  .wt-glass { width: 148px; height: 168px; }
+  .wt-title { font-size: 25px; }
+}

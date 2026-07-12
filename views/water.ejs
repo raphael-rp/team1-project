@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Intake Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div id="water-tracker-app">
+
+  <nav class="wt-nav">
+    <a class="wt-nav-link active" href="/water">Water</a>
+    <a class="wt-nav-link" href="/water-add">Add</a>
+    <a class="wt-nav-link" href="/water-history">History</a>
+  </nav>
+
+  <header class="wt-header">
+    <div>
+      <p class="wt-eyebrow">Today</p>
+      <h1 class="wt-title">Water Intake</h1>
+    </div>
+    <button class="wt-goal-btn" id="wt-edit-goal-btn" type="button">Edit goal</button>
+  </header>
+
+  <main class="wt-main">
+
+    <% let mood = 'sad';
+       if (pct >= 100) mood = 'great';
+       else if (pct >= 50) mood = 'happy';
+       else if (pct >= 20) mood = 'neutral';
+    %>
+
+    <section class="wt-glass-wrap" aria-label="Progress toward daily goal">
+      <div class="wt-glass">
+        <div class="wt-glass-inner">
+          <div class="wt-water" style="height: <%= pct %>%;"></div>
+          <div class="wt-face mood-<%= mood %>">
+            <div class="wt-eyes">
+              <div class="wt-eye"></div>
+              <div class="wt-eye"></div>
+            </div>
+            <div class="wt-mouth"></div>
+          </div>
+        </div>
+      </div>
+      <div class="wt-glass-readout">
+        <span class="wt-percent"><%= pct %>%</span>
+        <span class="wt-of-goal"><%= consumed %> / <%= goal %> ml</span>
+      </div>
+      <div class="wt-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= pct %>">
+        <div class="wt-progress-fill" style="width: <%= pct %>%;"></div>
+      </div>
+    </section>
+
+    <section class="wt-stats" aria-label="Summary">
+      <div class="wt-stat">
+        <span class="wt-stat-value"><%= consumed %></span>
+        <span class="wt-stat-label">ml logged</span>
+      </div>
+      <div class="wt-stat">
+        <span class="wt-stat-value"><%= remaining %></span>
+        <span class="wt-stat-label">ml remaining</span>
+      </div>
+      <div class="wt-stat">
+        <span class="wt-stat-value"><%= (consumed / 250).toFixed(1) %></span>
+        <span class="wt-stat-label">cups (250ml)</span>
+      </div>
+    </section>
+
+    <section class="wt-log" aria-label="Today's entries">
+      <h2 class="wt-log-title">Daily Log</h2>
+      <ul class="wt-log-list">
+        <% logs.forEach(function(entry) { %>
+          <li class="wt-log-item">
+            <span>
+              <span class="wt-log-amount"><%= entry.amountMl %> ml</span>
+              <span class="wt-log-time">
+                <%= new Date(entry.loggedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) %>
+              </span>
+            </span>
+            <form method="POST" action="/water-delete/<%= entry.waterId %>" style="display:inline;">
+              <button class="wt-log-remove" type="submit" aria-label="Remove entry">Remove</button>
+            </form>
+          </li>
+        <% }); %>
+      </ul>
+      <% if (logs.length === 0) { %>
+        <p class="wt-empty">Nothing logged yet today. <a href="/water-add">Add water</a> to get started.</p>
+      <% } %>
+    </section>
+
+  </main>
+</div>
+
+<dialog class="wt-dialog" id="wt-goal-dialog">
+  <form method="POST" action="/water-goal" class="wt-dialog-form">
+    <h2>Daily goal</h2>
+    <label for="wt-goal-input">Target intake (ml)</label>
+    <input id="wt-goal-input" name="goalMl" type="number" min="250" step="50" value="<%= goal %>" required>
+    <div class="wt-dialog-actions">
+      <button type="button" class="wt-dialog-cancel" id="wt-goal-cancel">Cancel</button>
+      <button type="submit" class="wt-dialog-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  // Only remaining client-side JS: opening/closing the native <dialog> for goal editing.
+  // All water data now comes from the server on each page load.
+  const goalDialog = document.getElementById('wt-goal-dialog');
+  document.getElementById('wt-edit-goal-btn').addEventListener('click', () => goalDialog.showModal());
+  document.getElementById('wt-goal-cancel').addEventListener('click', () => goalDialog.close());
+</script>
+</body>
+</html>
