@@ -469,6 +469,395 @@ app.get("/logout", (req, res) => {
 });
 
 // ==========================
+// Add Workout
+// ==========================
+
+app.get("/addWorkout", requireLogin, (req, res) => {
+
+    res.render("addWorkout", {
+        account: req.session.account
+    });
+
+});
+
+app.post("/addWorkout", requireLogin, (req, res) => {
+
+    const {
+        activity,
+        minutes,
+        caloriesBurned,
+        workoutDate,
+        workoutTime
+    } = req.body;
+
+    const sql = `
+        INSERT INTO workouts
+        (
+            accountId,
+            activity,
+            minutes,
+            caloriesBurned,
+            workoutDate,
+            workoutTime
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    connection.query(
+
+        sql,
+
+        [
+            req.session.account.accountId,
+            activity,
+            minutes,
+            caloriesBurned,
+            workoutDate,
+            workoutTime
+        ],
+
+        (err) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            res.redirect("/exerciseHistory");
+
+        }
+
+    );
+
+});
+// ==========================
+// Exercise History
+// ==========================
+
+app.get("/exerciseHistory", requireLogin, (req, res) => {
+
+    const sql = `
+        SELECT *
+        FROM workouts
+        WHERE accountId = ?
+        ORDER BY workoutDate DESC, workoutTime DESC
+    `;
+
+    connection.query(
+
+        sql,
+
+        [req.session.account.accountId],
+
+        (err, results) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            res.render("excerciseHistory", {
+
+                workouts: results,
+                account: req.session.account
+
+            });
+
+        }
+
+    );
+
+});
+
+// ==========================
+// Edit Workout
+// ==========================
+
+app.get("/editWorkout/:id", requireLogin, (req, res) => {
+
+    const sql = `
+        SELECT *
+        FROM workouts
+        WHERE workoutId = ?
+        AND accountId = ?
+    `;
+
+    connection.query(
+
+        sql,
+
+        [
+            req.params.id,
+            req.session.account.accountId
+        ],
+
+        (err, results) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            if (results.length === 0) {
+
+                return res.redirect("/exerciseHistory");
+
+            }
+
+            res.render("editWorkout", {
+
+                workout: results[0],
+                account: req.session.account
+
+            });
+
+        }
+
+    );
+
+});
+
+// ==========================
+// Update Workout
+// ==========================
+
+app.post("/editWorkout/:id", requireLogin, (req, res) => {
+
+    const {
+        activity,
+        minutes,
+        caloriesBurned,
+        workoutDate,
+        workoutTime
+    } = req.body;
+
+    const sql = `
+        UPDATE workouts
+        SET
+            activity = ?,
+            minutes = ?,
+            caloriesBurned = ?,
+            workoutDate = ?,
+            workoutTime = ?
+        WHERE workoutId = ?
+        AND accountId = ?
+    `;
+
+    connection.query(
+
+        sql,
+
+        [
+            activity,
+            minutes,
+            caloriesBurned,
+            workoutDate,
+            workoutTime,
+            req.params.id,
+            req.session.account.accountId
+        ],
+
+        (err) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            res.redirect("/exerciseHistory");
+
+        }
+
+    );
+
+});
+
+// ==========================
+// Delete Workout
+// ==========================
+
+app.post("/deleteWorkout/:id", requireLogin, (req, res) => {
+
+    const sql = `
+        DELETE FROM workouts
+        WHERE workoutId = ?
+        AND accountId = ?
+    `;
+
+    connection.query(
+
+        sql,
+
+        [
+            req.params.id,
+            req.session.account.accountId
+        ],
+
+        (err) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            res.redirect("/exerciseHistory");
+
+        }
+
+    );
+
+});
+// ==========================
+// BMI Tracker
+// ==========================
+
+app.get("/bmi", requireLogin, (req, res) => {
+
+    const sql = `
+        SELECT *
+        FROM bmi
+        WHERE accountId = ?
+        ORDER BY recordDate ASC
+    `;
+
+    connection.query(
+
+        sql,
+
+        [req.session.account.accountId],
+
+        (err, results) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            res.render("bmi", {
+
+                history: results,
+                account: req.session.account
+
+            });
+
+        }
+
+    );
+
+});
+
+// ==========================
+// Save BMI
+// ==========================
+
+app.post("/bmi", requireLogin, (req, res) => {
+
+    const {
+
+        height,
+        weight,
+        bmi,
+        category
+
+    } = req.body;
+
+    const sql = `
+        INSERT INTO bmi
+        (
+            accountId,
+            height,
+            weight,
+            bmi,
+            category,
+            recordDate
+        )
+        VALUES (?, ?, ?, ?, ?, CURDATE())
+    `;
+
+    connection.query(
+
+        sql,
+
+        [
+
+            req.session.account.accountId,
+            height,
+            weight,
+            bmi,
+            category
+
+        ],
+
+        (err) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            res.redirect("/bmi");
+
+        }
+
+    );
+
+});
+
+// ==========================
+// Delete BMI
+// ==========================
+
+app.post("/deleteBMI/:id", requireLogin, (req, res) => {
+
+    const sql = `
+        DELETE FROM bmi
+        WHERE bmiId = ?
+        AND accountId = ?
+    `;
+
+    connection.query(
+
+        sql,
+
+        [
+
+            req.params.id,
+            req.session.account.accountId
+
+        ],
+
+        (err) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            res.redirect("/bmi");
+
+        }
+
+    );
+
+});
+
+// ==========================
 // Start Server
 // ==========================
 const PORT = 3000;
