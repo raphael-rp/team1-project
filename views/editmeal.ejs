@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Edit Meals</title>
+
+<link rel="stylesheet" href="/style.css">
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f4f4f4;
+}
+
+header{
+    background:#22c55e;
+    color:white;
+    text-align:center;
+    padding:20px;
+}
+
+.container{
+    width:800px;
+    margin:40px auto;
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+
+.meal-card{
+    border:1px solid #ddd;
+    padding:15px;
+    margin-bottom:20px;
+    border-radius:8px;
+}
+
+label{
+    display:block;
+    margin-top:10px;
+    font-weight:bold;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    box-sizing:border-box;
+}
+
+.button-group{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+}
+
+.save-btn{
+    flex:1;
+    background:#22c55e;
+    color:white;
+    border:none;
+    padding:10px;
+    cursor:pointer;
+    border-radius:5px;
+}
+
+.delete-btn{
+    flex:1;
+    background:#ef4444;
+    color:white;
+    border:none;
+    padding:10px;
+    cursor:pointer;
+    border-radius:5px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+    <h1>Edit Meals</h1>
+</header>
+
+
+<nav>
+    <a href="/">Dashboard</a>
+    <a href="/add">Add Workout</a>
+    <a href="/calorie">Calorie Tracker</a>
+</nav>
+
+
+
+<div class="container">
+
+
+<h2>Edit or Delete Meals</h2>
+
+
+
+<% if(meals.length === 0){ %>
+
+    <p>No meals found.</p>
+
+
+<% } else { %>
+
+
+
+<% meals.forEach(meal => { %>
+
+
+<div class="meal-card">
+
+
+<form action="/editMeal/<%= meal.mealId %>" method="POST">
+
+
+<label>
+    Meal Name
+</label>
+
+
+<input
+    type="text"
+    name="mealName"
+    value="<%= meal.mealName %>"
+    required
+>
+
+
+
+<label>
+    Calories
+</label>
+
+
+<input
+    type="number"
+    name="calories"
+    value="<%= meal.calories %>"
+    min="0"
+    required
+>
+
+
+
+<label>
+    Date
+</label>
+
+
+<input
+    type="date"
+    name="mealDate"
+    value="<%= meal.mealDate.toISOString().split('T')[0] %>"
+    max="<%= new Date().toISOString().split('T')[0] %>"
+    required
+>
+
+
+
+<div class="button-group">
+
+
+<button class="save-btn" type="submit">
+    Save Changes
+</button>
+
+
+</form>
+
+
+
+<form 
+action="/deleteMeal/<%= meal.mealId %>" 
+method="POST"
+onsubmit="return confirm('Delete this meal?');"
+>
+
+
+<button class="delete-btn" type="submit">
+    Delete
+</button>
+
+
+</form>
+
+
+</div>
+
+
+</div>
+
+
+<% }) %>
+
+
+<% } %>
+
+
+
+</div>
+
+
+</body>
+</html>

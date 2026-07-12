@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Search Meals</title>
+
+<link rel="stylesheet" href="/style.css">
+
+<style>
+
+body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f4f4f4;
+}
+
+header{
+    background:#22c55e;
+    color:white;
+    text-align:center;
+    padding:20px;
+}
+
+.container{
+    width:800px;
+    margin:40px auto;
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+
+input{
+    width:100%;
+    padding:12px;
+    font-size:16px;
+    border:1px solid #ccc;
+    border-radius:5px;
+    box-sizing:border-box;
+}
+
+.search-card{
+    border:1px solid #ddd;
+    border-radius:8px;
+    padding:15px;
+    margin-top:15px;
+    background:white;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>Search Meals</h1>
+
+</header>
+
+
+<nav>
+
+    <a href="/">Dashboard</a>
+
+    <a href="/add">Add Workout</a>
+
+    <a href="/calorie">Calorie Tracker</a>
+
+    <a href="/logout">Logout</a>
+
+</nav>
+
+
+
+<div class="container">
+
+
+<h2>Search Meal</h2>
+
+
+<form action="/searchMeal" method="GET">
+
+    <input
+        type="text"
+        name="search"
+        placeholder="Enter meal name..."
+        value="<%= search || '' %>"
+    >
+
+</form>
+
+
+
+<br>
+
+
+
+<% if(meals.length === 0){ %>
+
+    <p>No meals found.</p>
+
+
+<% } else { %>
+
+
+    <% meals.forEach(meal => { %>
+
+
+        <div class="search-card">
+
+
+            <h3>
+                <%= meal.mealName %>
+            </h3>
+
+
+
+            <p>
+
+                <strong>
+                    Calories:
+                </strong>
+
+                <%= meal.calories %> kcal
+
+            </p>
+
+
+
+            <p>
+
+                <strong>
+                    Date:
+                </strong>
+
+
+                <%= new Date(meal.mealDate).toISOString().split("T")[0] %>
+
+            </p>
+
+
+
+        </div>
+
+
+    <% }) %>
+
+
+<% } %>
+
+
+
+</div>
+
+
+
+</body>
+
+</html>

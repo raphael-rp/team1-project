@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>BMI Tracker</title>
+
+    <link
+        rel="stylesheet"
+        href="/style.css"
+    >
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+    <header>
+
+        <h1>BMI Tracker</h1>
+
+    </header>
+
+    <nav>
+
+        <a href="/">Dashboard</a>
+
+        <a href="/addWorkout">Add Workout</a>
+
+        <a href="/exerciseHistory">Exercise History</a>
+
+        <a href="/bmi">BMI Tracker</a>
+
+        <a href="/calorie">Calorie Tracker</a>
+
+        <a href="/logout">Logout</a>
+
+    </nav>
+
+    <div class="container">
+
+        <h2>BMI Calculator</h2>
+
+        <form
+            action="/bmi"
+            method="POST"
+        >
+
+            <label>
+
+                Height (cm)
+
+            </label>
+
+            <input
+                type="number"
+                id="height"
+                name="height"
+                step="0.1"
+                required
+            >
+
+            <label>
+
+                Weight (kg)
+
+            </label>
+
+            <input
+                type="number"
+                id="weight"
+                name="weight"
+                step="0.1"
+                required
+            >
+
+            <label>
+
+                BMI
+
+            </label>
+
+            <input
+                type="text"
+                id="bmi"
+                name="bmi"
+                readonly
+            >
+
+            <label>
+
+                Category
+
+            </label>
+
+            <input
+                type="text"
+                id="category"
+                name="category"
+                readonly
+            >
+
+            <button type="submit">
+
+                Save BMI
+
+            </button>
+
+        </form>
+
+        <hr>
+
+        <h2>BMI History</h2>
+
+        <% if (history.length === 0) { %>
+
+            <p>No BMI records found.</p>
+
+        <% } else { %>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Date</th>
+                        <th>Height</th>
+                        <th>Weight</th>
+                        <th>BMI</th>
+                        <th>Category</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <% history.forEach(record => { %>
+
+                        <tr>
+
+                            <td>
+
+                                <%= new Date(record.recordDate).toISOString().split("T")[0] %>
+
+                            </td>
+
+                            <td>
+
+                                <%= record.height %> cm
+
+                            </td>
+
+                            <td>
+
+                                <%= record.weight %> kg
+
+                            </td>
+
+                            <td>
+
+                                <%= record.bmi %>
+
+                            </td>
+
+                            <td>
+
+                                <%= record.category %>
+
+                            </td>
+
+                        </tr>
+
+                    <% }) %>
+
+                </tbody>
+
+            </table>
+
+        <% } %>
+
+        <th>Action</th>
+
+        <td>
+
+        <form
+            action="/deleteBMI/<%= record.bmiId %>"
+            method="POST"
+        >
+
+            <button
+                type="submit"
+                onclick="return confirm('Delete this BMI record?')"
+            >
+
+                Delete
+
+            </button>
+
+        </form>
+
+</td>
+
+        <br>
+
+        <canvas id="weightChart"></canvas>
+
+    </div>
+
+    <script>
+
+        const height =
+            document.getElementById("height");
+
+        const weight =
+            document.getElementById("weight");
+
+        const bmi =
+            document.getElementById("bmi");
+
+        const category =
+            document.getElementById("category");
+
+        function calculateBMI() {
+
+            const h =
+                Number(height.value) / 100;
+
+            const w =
+                Number(weight.value);
+
+            if (!h || !w) {
+
+                bmi.value = "";
+                category.value = "";
+                return;
+
+            }
+
+            const result =
+                (w / (h * h)).toFixed(1);
+
+            bmi.value = result;
+
+            if (result < 18.5) {
+
+                category.value = "Underweight";
+
+            }
+            else if (result < 25) {
+
+                category.value = "Normal";
+
+            }
+            else if (result < 30) {
+
+                category.value = "Overweight";
+
+            }
+            else {
+
+                category.value = "Obese";
+
+            }
+
+        }
+
+        height.addEventListener(
+            "input",
+            calculateBMI
+        );
+
+        weight.addEventListener(
+            "input",
+            calculateBMI
+        );
+
+        const chart = document
+            .getElementById("weightChart");
+
+        new Chart(chart, {
+
+            type: "line",
+
+            data: {
+
+                labels: [
+
+                    <% history.forEach(record => { %>
+
+                        "<%= new Date(record.recordDate).toISOString().split('T')[0] %>",
+
+                    <% }) %>
+
+                ],
+
+                datasets: [
+
+                    {
+
+                        label: "Weight",
+
+                        data: [
+
+                            <% history.forEach(record => { %>
+
+                                <%= record.weight %>,
+
+                            <% }) %>
+
+                        ]
+
+                    },
+
+                    {
+
+                        label: "BMI",
+
+                        data: [
+
+                            <% history.forEach(record => { %>
+
+                                <%= record.bmi %>,
+
+                            <% }) %>
+
+                        ]
+
+                    }
+
+                ]
+
+            }
+
+        });
+
+    </script>
+
+</body>
+
+</html>

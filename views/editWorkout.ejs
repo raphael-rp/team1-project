@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Edit Workout</title>
+
+    <link
+        rel="stylesheet"
+        href="/style.css"
+    >
+
+</head>
+
+<body>
+
+    <header>
+
+        <h1>Edit Workout</h1>
+
+    </header>
+
+    <nav>
+
+        <a href="/">Dashboard</a>
+
+        <a href="/addWorkout">Add Workout</a>
+
+        <a href="/exerciseHistory">Exercise History</a>
+
+        <a href="/bmi">BMI Tracker</a>
+
+        <a href="/calorie">Calorie Tracker</a>
+
+        <a href="/logout">Logout</a>
+
+    </nav>
+
+    <div class="container">
+
+        <h2>Edit Workout</h2>
+
+        <form
+            action="/editWorkout/<%= workout.workoutId %>"
+            method="POST"
+        >
+
+            <label>
+
+                Exercise
+
+            </label>
+
+            <select
+                id="activity"
+                name="activity"
+                required
+            >
+
+                <option
+                    value="Running"
+                    <%= workout.activity === "Running" ? "selected" : "" %>
+                >
+                    Running
+                </option>
+
+                <option
+                    value="Walking"
+                    <%= workout.activity === "Walking" ? "selected" : "" %>
+                >
+                    Walking
+                </option>
+
+                <option
+                    value="Cycling"
+                    <%= workout.activity === "Cycling" ? "selected" : "" %>
+                >
+                    Cycling
+                </option>
+
+                <option
+                    value="Swimming"
+                    <%= workout.activity === "Swimming" ? "selected" : "" %>
+                >
+                    Swimming
+                </option>
+
+                <option
+                    value="Gym"
+                    <%= workout.activity === "Gym" ? "selected" : "" %>
+                >
+                    Gym
+                </option>
+
+                <option
+                    value="Football"
+                    <%= workout.activity === "Football" ? "selected" : "" %>
+                >
+                    Football
+                </option>
+
+                <option
+                    value="Basketball"
+                    <%= workout.activity === "Basketball" ? "selected" : "" %>
+                >
+                    Basketball
+                </option>
+
+                <option
+                    value="Badminton"
+                    <%= workout.activity === "Badminton" ? "selected" : "" %>
+                >
+                    Badminton
+                </option>
+
+            </select>
+
+            <label>
+
+                Duration (Minutes)
+
+            </label>
+
+            <input
+                type="number"
+                id="minutes"
+                name="minutes"
+                value="<%= workout.minutes %>"
+                min="1"
+                required
+            >
+
+            <label>
+
+                Calories Burned
+
+            </label>
+
+            <input
+                type="number"
+                id="caloriesBurned"
+                name="caloriesBurned"
+                value="<%= workout.caloriesBurned %>"
+                readonly
+            >
+
+            <label>
+
+                Workout Date
+
+            </label>
+
+            <input
+                type="date"
+                name="workoutDate"
+                value="<%= new Date(workout.workoutDate).toISOString().split('T')[0] %>"
+                required
+            >
+
+            <label>
+
+                Workout Time
+
+            </label>
+
+            <input
+                type="time"
+                name="workoutTime"
+                value="<%= workout.workoutTime %>"
+                required
+            >
+
+            <button type="submit">
+
+                Update Workout
+
+            </button>
+
+        </form>
+
+    </div>
+
+    <script>
+
+        const activity =
+            document.getElementById("activity");
+
+        const minutes =
+            document.getElementById("minutes");
+
+        const calories =
+            document.getElementById("caloriesBurned");
+
+        const calorieRates = {
+
+            Running: 10,
+            Walking: 4,
+            Cycling: 8,
+            Swimming: 9,
+            Gym: 6,
+            Football: 9,
+            Basketball: 8,
+            Badminton: 7
+
+        };
+
+        function calculateCalories() {
+
+            const rate =
+                calorieRates[activity.value] || 0;
+
+            const duration =
+                Number(minutes.value) || 0;
+
+            calories.value = rate * duration;
+
+        }
+
+        activity.addEventListener(
+            "change",
+            calculateCalories
+        );
+
+        minutes.addEventListener(
+            "input",
+            calculateCalories
+        );
+
+    </script>
+
+</body>
+
+</html>
