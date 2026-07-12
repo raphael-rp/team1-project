@@ -1,0 +1,111 @@
+<body>
+
+<header>
+    <h1>Fitness Dashboard</h1>
+</header>
+
+<nav>
+    <a href="/">Dashboard</a>
+    <a href="/addWorkout">Add Workout</a>
+    <a href="/exerciseHistory">Exercise History</a>
+    <a href="/calorie">Calorie Tracker</a>
+    <a href="/water">Water Tracker</a>
+    <a href="/bmi">BMI Tracker</a>
+    <a href="/logout">Logout</a>
+</nav>
+
+<div class="container">
+
+<h2>💧 Water Tracker</h2>
+
+    <h2>Add Water Intake</h2>
+
+    <p>
+        <a href="/water" class="green-link">
+            ← Back to Water Tracker
+        </a>
+    </p>
+
+    <div class="summary-grid">
+
+        <div class="summary-card">
+
+            <h3>Daily Goal</h3>
+
+            <h2><%= goal %> ml</h2>
+
+        </div>
+
+        <div class="summary-card">
+
+            <h3>Today's Intake</h3>
+
+            <h2><%= consumed %> ml</h2>
+
+        </div>
+
+        <div class="summary-card">
+
+            <h3>Remaining</h3>
+
+            <h2><%= goal - consumed %> ml</h2>
+
+        </div>
+
+    </div>
+
+    <div class="quick-add">
+
+        <h2>Quick Add</h2>
+
+        <div class="quick-buttons">
+
+            <form action="/water-add" method="POST">
+                <button type="submit" name="amount" value="150">
+                    +150 ml
+                </button>
+            </form>
+
+            <form action="/water-add" method="POST">
+                <button type="submit" name="amount" value="250">
+                    +250 ml
+                </button>
+            </form>
+
+            <form action="/water-add" method="POST">
+                <button type="submit" name="amount" value="500">
+                    +500 ml
+                </button>
+            </form>
+
+        </div>
+
+        <h3 style="margin-top:25px;">
+            Custom Amount
+        </h3>
+
+        <form
+            action="/water-add"
+            method="POST"
+            class="custom-water">
+
+            <input
+                type="number"
+                name="amount"
+                placeholder="Enter amount (ml)"
+                required>
+
+            <button type="submit">
+
+                Add Water
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

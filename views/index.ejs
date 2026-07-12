@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Fitness Dashboard</title>
+
+<link rel="stylesheet" href="/style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<header>
+    <h1>Fitness Dashboard</h1>
+</header>
+
+<nav>
+    <a href="/">Dashboard</a>
+    <a href="/addWorkout">Add Workout</a>
+    <a href="/exerciseHistory">Exercise History</a>
+    <a href="/calorie">Calorie Tracker</a>
+    <a href="/water">Water Tracker</a>
+    <a href="/bmi">BMI Tracker</a>
+    <a href="/logout">Logout</a>
+</nav>
+
+<div class="container">
+
+
+
+    <p style="text-align:right; color:#666; font-size:14px;">
+        Logged in as 
+        <b>
+            <%= account.email %>
+        </b>
+    </p>
+
+
+    <!-- Calorie Tracker Button -->
+    <div style="display:flex; justify-content:center; gap:20px; margin:25px 0;">
+
+    <a href="/calorie">
+
+        <button style="
+            background:#22c55e;
+            color:white;
+            border:none;
+            padding:15px 35px;
+            font-size:18px;
+            border-radius:8px;
+            cursor:pointer;
+        ">
+            🍽️ Calorie Tracker
+        </button>
+
+    </a>
+
+    <a href="/water">
+
+        <button style="
+            background:#22c55e;
+            color:white;
+            border:none;
+            padding:15px 35px;
+            font-size:18px;
+            border-radius:8px;
+            cursor:pointer;
+        ">
+            💧 Water Tracker
+        </button>
+
+    </a>
+
+
+    <h2>Workout Progress</h2>
+
+
+    <canvas id="chart"></canvas>
+
+
+    <h3>Saved Workouts</h3>
+
+
+    <div id="list"></div>
+
+
+    <button 
+        onclick="clearAll()" 
+        style="
+            background:red;
+            margin-top:15px;
+            color:white;
+            border:none;
+            padding:10px;
+            border-radius:5px;
+        "
+    >
+        Clear All Data
+    </button>
+
+
+</div>
+
+
+
+<script>
+
+let chart;
+
+
+
+function getData() {
+
+    return JSON.parse(
+        localStorage.getItem("workouts_<%= account.email %>")
+    ) || [];
+
+}
+
+
+
+function saveData(data) {
+
+    localStorage.setItem(
+        "workouts_<%= account.email %>",
+        JSON.stringify(data)
+    );
+
+}
+
+
+
+function deleteItem(index) {
+
+    let data = getData();
+
+    data.splice(index,1);
+
+    saveData(data);
+
+    render();
+
+}
+
+
+
+function clearAll(){
+
+    if(confirm("Are you sure you want to clear ALL workouts?")){
+
+        localStorage.removeItem(
+            "workouts_<%= account.email %>"
+        );
+
+        render();
+
+    }
+
+}
+
+
+
+function sortData(data){
+
+    return data
+    .map(d=>({
+
+        ...d,
+
+        datetime:new Date(
+            d.date+"T"+d.time
+        )
+
+    }))
+    .sort(
+        (a,b)=>a.datetime-b.datetime
+    );
+
+}
+
+
+
+function buildChart(data){
+
+
+    let sorted = sortData(data);
+
+
+    let labels = sorted.map(
+        d=>d.date+" "+d.time
+    );
+
+
+    let grouped={};
+
+
+    sorted.forEach(d=>{
+
+
+        if(!grouped[d.activity]){
+
+            grouped[d.activity]={};
+
+        }
+
+
+        let key=d.date+" "+d.time;
+
+
+        grouped[d.activity][key]
+            =Number(d.minutes);
+
+
+    });
+
+
+
+    let datasets = Object.keys(grouped)
+    .map(type=>{
+
+
+        let map=grouped[type];
+
+
+        return {
+
+            label:type,
+
+            data:labels.map(
+                l=>map[l]||0
+            ),
+
+            fill:false,
+
+            tension:0.3
+
+        };
+
+
+    });
+
+
+
+    if(chart){
+
+        chart.destroy();
+
+    }
+
+
+
+    chart=new Chart(
+        document.getElementById("chart"),
+        {
+
+        type:"line",
+
+        data:{
+
+            labels:labels,
+
+            datasets:datasets
+
+        },
+
+        options:{
+
+            responsive:true,
+
+            scales:{
+
+                y:{
+                    beginAtZero:true
+                }
+
+            }
+
+        }
+
+    });
+
+
+}
+
+
+
+function render(){
+
+
+    let data=getData();
+
+
+
+    if(data.length===0){
+
+        document.getElementById("list").innerHTML=
+        "<p>No workouts yet.</p>";
+
+
+        if(chart){
+
+            chart.destroy();
+
+        }
+
+
+        return;
+
+    }
+
+
+
+    buildChart(data);
+
+
+
+    document.getElementById("list").innerHTML =
+    data.map((d,i)=>`
+
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:10px;
+            border-bottom:1px solid #ddd;
+        ">
+
+
+            <div>
+
+                <b>${d.activity}</b>
+                <br>
+
+                ${d.date} ${d.time}
+                —
+                ${d.minutes} min
+
+            </div>
+
+
+            <button
+                onclick="deleteItem(${i})"
+
+                style="
+                    background:#ef4444;
+                    color:white;
+                    border:none;
+                    padding:8px 15px;
+                    border-radius:5px;
+                "
+            >
+
+                Delete
+
+            </button>
+
+
+        </div>
+
+
+    `).join("");
+
+}
+
+
+render();
+
+
+</script>
+
+
+</body>
+
+
+
+

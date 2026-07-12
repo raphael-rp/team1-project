@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add Meal</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial, Helvetica, sans-serif;
+            background:#f4f4f4;
+        }
+
+
+        header{
+            background:#22c55e;
+            color:white;
+            text-align:center;
+            padding:20px;
+        }
+        .container{
+
+            width:500px;
+            margin:40px auto;
+            background:white;
+            padding:30px;
+            border-radius:10px;
+            box-shadow:0 0 10px rgba(0,0,0,.1);
+
+        }
+
+
+        label{
+
+            display:block;
+            margin-top:15px;
+            font-weight:bold;
+
+        }
+
+
+        input{
+
+            width:100%;
+            padding:10px;
+            margin-top:5px;
+            border:1px solid #ccc;
+            border-radius:5px;
+            box-sizing:border-box;
+
+        }
+
+
+        button{
+
+            margin-top:25px;
+            width:100%;
+            padding:12px;
+            background:#22c55e;
+            color:white;
+            border:none;
+            border-radius:5px;
+            font-size:16px;
+            cursor:pointer;
+
+        }
+
+
+        button:hover{
+
+            background:#16a34a;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>Add Meal</h1>
+
+</header>
+
+
+
+<nav>
+
+    <a href="/">Dashboard</a>
+
+    <a href="/add">Add Workout</a>
+
+    <a href="/calorie">Calorie Tracker</a>
+
+    <a href="/logout">Logout</a>
+
+</nav>
+
+
+
+
+<div class="container">
+
+
+    <p style="text-align:right;color:#666;font-size:14px;">
+
+        Logged in as 
+        <b><%= account.email %></b>
+
+    </p>
+
+
+
+    <h2>Add New Meal</h2>
+
+
+
+    <form action="/addMeal" method="POST">
+
+
+        <label for="mealName">
+            Meal Name
+        </label>
+
+
+        <input
+            type="text"
+            id="mealName"
+            name="mealName"
+            required
+        >
+
+
+
+
+        <label for="calories">
+            Calories
+        </label>
+
+
+        <input
+            type="number"
+            id="calories"
+            name="calories"
+            min="0"
+            required
+        >
+
+
+
+
+        <label for="mealDate">
+            Date
+        </label>
+
+
+        <input
+            type="date"
+            id="mealDate"
+            name="mealDate"
+            required
+        >
+
+
+
+
+        <button type="submit">
+            Save Meal
+        </button>
+
+
+    </form>
+
+
+</div>
+
+
+
+<script>
+
+const today = new Date()
+.toISOString()
+.split("T")[0];
+
+
+document.getElementById("mealDate").max = today;
+
+
+</script>
+
+
+
+</body>
+
+</html>

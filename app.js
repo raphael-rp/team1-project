@@ -13,15 +13,6 @@ app.use(session({
     saveUninitialized: false
 }));
 
-// TEMPORARY - FOR LOCAL TESTING ONLY - REMOVE BEFORE COMMITTING
-app.use((req, res, next) => {
-  if (!req.session.account) {
-    req.session.account = { accountId: 1, username: "Anthony", email: "anthony@gmail.com" };
-  }
-  next();
-});
-
-
 app.use(express.static(path.join(__dirname, "public")));
 // ==========================
 // MySQL Connection
@@ -52,8 +43,9 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 
 // ==========================
-// Dashboard
+// Require Login Middleware
 // ==========================
+
 function requireLogin(req, res, next) {
 
     if (!req.session.account) {
@@ -64,20 +56,14 @@ function requireLogin(req, res, next) {
 
 }
 
+// ==========================
+// Home
+// ==========================
 
 app.get("/", requireLogin, (req, res) => {
-
-    res.render("index", {
-        account: req.session.account
-    });
-
+    res.redirect("/water");
 });
-// ==========================
-// Calorie Home
-// ==========================
-app.get("/calorie", requireLogin, (req, res) => {
-    res.render("Calorie");
-});
+
 
 // ==========================
 // Add Meal
@@ -327,186 +313,345 @@ app.post("/deleteMeal/:id", requireLogin, (req,res)=>{
 
 });
 
-// Paste this whole block into app.js, anywhere among the other app.get/app.post
-// routes (e.g. right after the "Delete Meal" section, before "Login").
-// It follows the exact same requireLogin + connection.query pattern already used
-// for meals.
+
 
 // ==========================
-// Water Intake - Dashboard
+// Water Dashboard
 // ==========================
+
 app.get("/water", requireLogin, (req, res) => {
+
     const accountId = req.session.account.accountId;
 
-    const goalSql = `SELECT goalMl FROM water_goals WHERE accountId = ?`;
-    connection.query(goalSql, [accountId], (err, goalResults) => {
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
-        }
-
-        const goal = goalResults.length > 0 ? goalResults[0].goalMl : 2000;
-
-        const logsSql = `
-            SELECT * FROM water_logs
-            WHERE accountId = ?
-            AND DATE(loggedAt) = CURDATE()
-            ORDER BY loggedAt DESC
-        `;
-
-        connection.query(logsSql, [accountId], (err, logs) => {
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-            const consumed = logs.reduce((sum, row) => sum + row.amountMl, 0);
-            const pct = Math.max(0, Math.min(100, Math.round((consumed / goal) * 100)));
-
-            res.render("water", {
-                account: req.session.account,
-                logs: logs,
-                goal: goal,
-                consumed: consumed,
-                pct: pct,
-                remaining: Math.max(0, goal - consumed)
-            });
-        });
-    });
-});
-
-// ==========================
-// Water Intake - Update Goal
-// ==========================
-app.post("/water-goal", requireLogin, (req, res) => {
-    const accountId = req.session.account.accountId;
-    const goalMl = parseInt(req.body.goalMl, 10);
-
-    const sql = `
-        INSERT INTO water_goals (accountId, goalMl)
-        VALUES (?, ?)
-        ON DUPLICATE KEY UPDATE goalMl = ?
+    const goalSQL = `
+        SELECT goalMl
+        FROM water_goal
+        WHERE accountId=?
     `;
 
-    connection.query(sql, [accountId, goalMl, goalMl], (err) => {
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
+    connection.query(
+
+        goalSQL,
+
+        [accountId],
+
+        (err, goalResult) => {
+
+            if (err) {
+
+                console.log(err);
+                return res.send("Database Error");
+
+            }
+
+            let goal = 2000;
+
+            if (goalResult.length > 0) {
+
+                goal = goalResult[0].goalMl;
+
+            }
+
+            const logSQL = `
+                SELECT *
+                FROM water_log
+                WHERE accountId=?
+                AND DATE(loggedAt)=CURDATE()
+                ORDER BY loggedAt DESC
+            `;
+
+            connection.query(
+
+                logSQL,
+
+                [accountId],
+
+                (err, logs) => {
+
+                    if (err) {
+
+                        console.log(err);
+                        return res.send("Database Error");
+
+                    }
+
+                    let consumed = 0;
+
+                    logs.forEach(log => {
+
+                        consumed += log.amountMl;
+
+                    });
+
+                    const remaining = Math.max(goal - consumed, 0);
+
+                    const pct = Math.min(
+
+                        Math.round((consumed / goal) * 100),
+
+                        100
+
+                    );
+
+                    res.render("water", {
+
+                        goal,
+
+                        consumed,
+
+                        remaining,
+
+                        pct,
+
+                        logs,
+
+                        account: req.session.account
+
+                    });
+
+                }
+
+            );
+
         }
-        res.redirect("/water");
-    });
+
+    );
+
 });
 
+
 // ==========================
-// Water Intake - Add page
+// Add Water
 // ==========================
+
 app.get("/water-add", requireLogin, (req, res) => {
+
     const accountId = req.session.account.accountId;
 
-    const goalSql = `SELECT goalMl FROM water_goals WHERE accountId = ?`;
-    connection.query(goalSql, [accountId], (err, goalResults) => {
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
-        }
-        const goal = goalResults.length > 0 ? goalResults[0].goalMl : 2000;
+    const goalSQL = `
+        SELECT goalMl
+        FROM water_goal
+        WHERE accountId=?
+    `;
 
-        const logsSql = `
-            SELECT * FROM water_logs
-            WHERE accountId = ?
-            AND DATE(loggedAt) = CURDATE()
-        `;
-        connection.query(logsSql, [accountId], (err, logs) => {
+    connection.query(
+        goalSQL,
+        [accountId],
+        (err, goalResult) => {
+
             if (err) {
                 console.log(err);
                 return res.send("Database Error");
             }
-            const consumed = logs.reduce((sum, row) => sum + row.amountMl, 0);
 
-            res.render("add", {
-                account: req.session.account,
-                consumed: consumed,
-                goal: goal
-            });
-        });
-    });
+            let goal = 2000;
+
+            if (goalResult.length > 0) {
+                goal = goalResult[0].goalMl;
+            }
+
+            const waterSQL = `
+                SELECT SUM(amountMl) AS total
+                FROM water_log
+                WHERE accountId=?
+                AND DATE(loggedAt)=CURDATE()
+            `;
+
+            connection.query(
+                waterSQL,
+                [accountId],
+                (err, results) => {
+
+                    if (err) {
+                        console.log(err);
+                        return res.send("Database Error");
+                    }
+
+                    const consumed = results[0].total || 0;
+
+                    res.render("addwater", {
+                        goal,
+                        consumed,
+                        account: req.session.account
+                    });
+
+                }
+            );
+
+        }
+    );
+
 });
 
 app.post("/water-add", requireLogin, (req, res) => {
-    const accountId = req.session.account.accountId;
-    const amountMl = parseInt(req.body.amount, 10);
 
-    if (!amountMl || amountMl <= 0) {
+    const accountId = req.session.account.accountId;
+
+    const amount = parseInt(req.body.amount);
+
+    if (!amount || amount <= 0) {
         return res.redirect("/water-add");
     }
 
-    const sql = `INSERT INTO water_logs (accountId, amountMl) VALUES (?, ?)`;
-
-    connection.query(sql, [accountId, amountMl], (err) => {
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
-        }
-        res.redirect("/water-add");
-    });
-});
-
-// ==========================
-// Water Intake - Delete a log
-// ==========================
-app.post("/water-delete/:id", requireLogin, (req, res) => {
     const sql = `
-        DELETE FROM water_logs
-        WHERE waterId = ?
-        AND accountId = ?
+        INSERT INTO water_log
+        (accountId, amountMl)
+        VALUES (?, ?)
     `;
 
-    connection.query(sql, [req.params.id, req.session.account.accountId], (err) => {
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
+    connection.query(
+        sql,
+        [
+            accountId,
+            amount
+        ],
+        (err) => {
+
+            if (err) {
+                console.log(err);
+                return res.send("Database Error");
+            }
+
+            res.redirect("/water");
+
         }
-        res.redirect("/water");
-    });
+    );
+
 });
 
 // ==========================
-// Water Intake - History
+// Water History
 // ==========================
+
 app.get("/water-history", requireLogin, (req, res) => {
+
     const accountId = req.session.account.accountId;
 
-    const goalSql = `SELECT goalMl FROM water_goals WHERE accountId = ?`;
-    connection.query(goalSql, [accountId], (err, goalResults) => {
+    const goalSQL = `
+        SELECT goalMl
+        FROM water_goal
+        WHERE accountId=?
+    `;
+
+    connection.query(goalSQL, [accountId], (err, goalResult) => {
+
         if (err) {
             console.log(err);
             return res.send("Database Error");
         }
-        const goal = goalResults.length > 0 ? goalResults[0].goalMl : 2000;
+
+        let goal = 2000;
+
+        if (goalResult.length > 0) {
+            goal = goalResult[0].goalMl;
+        }
 
         const sql = `
-            SELECT DATE(loggedAt) AS logDate, SUM(amountMl) AS total
-            FROM water_logs
-            WHERE accountId = ?
-            AND DATE(loggedAt) != CURDATE()
+            SELECT
+                DATE(loggedAt) AS logDate,
+                SUM(amountMl) AS total
+            FROM water_log
+            WHERE accountId=?
             GROUP BY DATE(loggedAt)
             ORDER BY logDate DESC
         `;
 
-        connection.query(sql, [accountId], (err, days) => {
+        connection.query(sql, [accountId], (err, results) => {
+
             if (err) {
                 console.log(err);
                 return res.send("Database Error");
             }
 
-            res.render("history", {
-                account: req.session.account,
-                days: days,
-                goal: goal
+            res.render("waterhistory", {
+                days: results,
+                goal,
+                account: req.session.account
             });
+
         });
+
     });
+
 });
+
+
+// ==========================
+// Delete Water
+// ==========================
+
+app.post("/water-delete/:id", requireLogin, (req, res) => {
+
+    const sql = `
+        DELETE FROM water_log
+        WHERE waterId=?
+        AND accountId=?
+    `;
+
+    connection.query(
+        sql,
+        [
+            req.params.id,
+            req.session.account.accountId
+        ],
+        (err) => {
+
+            if (err) {
+                console.log(err);
+                return res.send("Database Error");
+            }
+
+            res.redirect("/water");
+
+        }
+    );
+
+});
+
+
+// ==========================
+// Update Water Goal
+// ==========================
+
+app.post("/water-goal", requireLogin, (req, res) => {
+
+    const accountId = req.session.account.accountId;
+
+    const goalMl = parseInt(req.body.goalMl);
+
+    if (!goalMl || goalMl < 250) {
+        return res.redirect("/water");
+    }
+
+    const sql = `
+        INSERT INTO water_goal
+        (accountId, goalMl)
+        VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE
+        goalMl = VALUES(goalMl)
+    `;
+
+    connection.query(
+        sql,
+        [
+            accountId,
+            goalMl
+        ],
+        (err) => {
+
+            if (err) {
+                console.log(err);
+                return res.send("Database Error");
+            }
+
+            res.redirect("/water");
+
+        }
+    );
+
+});
+
+
 
 
 
@@ -670,4 +815,3 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
-
