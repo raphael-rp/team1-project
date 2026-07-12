@@ -69,6 +69,8 @@
 <nav>
     <a href="/">Dashboard</a>
     <a href="/addWorkout">Add Workout</a>
+    <a href="/exerciseHistory">Exercise History</a>
+    <a href="/bmi">BMI Tracker</a>
     <a href="/calorie">Calorie Tracker</a>
     <a href="/logout">Logout</a>
 </nav>
@@ -83,21 +85,33 @@
 
     <div class="button-grid">
 
-        <button onclick="window.location.href='/addMeal'">
-            ➕ Add Meal
-        </button>
+        <div>
+            <button onclick="window.location.href='/addMeal'">
+                ➕ Add Meal
+            </button>
+            <p>Add a new meal and record its calories.</p>
+        </div>
 
-        <button onclick="window.location.href='/editMeal'">
-            ✏️ Edit / Delete Meals
-        </button>
+        <div>
+            <button onclick="window.location.href='/editMeal'">
+                ✏️ Edit / Delete Meals
+            </button>
+            <p>Update or remove meals you've already saved.</p>
+        </div>
 
-        <button onclick="window.location.href='/foodhistory'">
-            📜 Food History
-        </button>
+        <div>
+            <button onclick="window.location.href='/foodhistory'">
+                📜 Food History
+            </button>
+            <p>View your previous meal records.</p>
+        </div>
 
-        <button onclick="window.location.href='/searchMeal'">
-            🔍 Search Meals
-        </button>
+        <div>
+            <button onclick="window.location.href='/searchMeal'">
+                🔍 Search Meals
+            </button>
+            <p>Search for meals by name.</p>
+        </div>
 
     </div>
 
