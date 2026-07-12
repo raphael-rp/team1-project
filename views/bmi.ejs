@@ -126,89 +126,76 @@
 
         <% } else { %>
 
-            <table>
+        <table>
 
-                <thead>
+            <thead>
 
-                    <tr>
+                <tr>
 
-                        <th>Date</th>
-                        <th>Height</th>
-                        <th>Weight</th>
-                        <th>BMI</th>
-                        <th>Category</th>
+                    <th>Date</th>
+                    <th>Height</th>
+                    <th>Weight</th>
+                    <th>BMI</th>
+                    <th>Category</th>
+                    <th>Action</th>
 
-                    </tr>
+                </tr>
 
-                </thead>
+            </thead>
 
-                <tbody>
+            <tbody>
 
-                    <% history.forEach(record => { %>
+                <% history.forEach(record => { %>
 
-                        <tr>
+                <tr>
 
-                            <td>
+                    <td>
+                        <%= new Date(record.recordDate).toISOString().split("T")[0] %>
+                    </td>
 
-                                <%= new Date(record.recordDate).toISOString().split("T")[0] %>
+                    <td>
+                        <%= record.height %> cm
+                    </td>
 
-                            </td>
+                    <td>
+                        <%= record.weight %> kg
+                    </td>
 
-                            <td>
+                    <td>
+                        <%= record.bmi %>
+                    </td>
 
-                                <%= record.height %> cm
+                    <td>
+                        <%= record.category %>
+                    </td>
 
-                            </td>
+                    <td>
 
-                            <td>
+                        <form
+                            action="/deleteBMI/<%= record.bmiId %>"
+                            method="POST"
+                        >
 
-                                <%= record.weight %> kg
+                            <button
+                                type="submit"
+                                onclick="return confirm('Delete this BMI record?')"
+                            >
+                                Delete
+                            </button>
 
-                            </td>
+                        </form>
 
-                            <td>
+                    </td>
 
-                                <%= record.bmi %>
+                </tr>
 
-                            </td>
+                <% }) %>
 
-                            <td>
+            </tbody>
 
-                                <%= record.category %>
-
-                            </td>
-
-                        </tr>
-
-                    <% }) %>
-
-                </tbody>
-
-            </table>
+        </table>
 
         <% } %>
-
-        <th>Action</th>
-
-        <td>
-
-        <form
-            action="/deleteBMI/<%= record.bmiId %>"
-            method="POST"
-        >
-
-            <button
-                type="submit"
-                onclick="return confirm('Delete this BMI record?')"
-            >
-
-                Delete
-
-            </button>
-
-        </form>
-
-</td>
 
         <br>
 
@@ -293,15 +280,11 @@
 
             data: {
 
-                labels: [
-
-                    <% history.forEach(record => { %>
-
-                        "<%= new Date(record.recordDate).toISOString().split('T')[0] %>",
-
-                    <% }) %>
-
-                ],
+                labels: <%- JSON.stringify(
+                    history.map(record =>
+                        new Date(record.recordDate).toISOString().split("T")[0]
+                    )
+                ) %>,
 
                 datasets: [
 
@@ -309,15 +292,9 @@
 
                         label: "Weight",
 
-                        data: [
-
-                            <% history.forEach(record => { %>
-
-                                <%= record.weight %>,
-
-                            <% }) %>
-
-                        ]
+                        data: <%- JSON.stringify(
+                            history.map(record => record.weight)
+                        ) %>
 
                     },
 
@@ -325,15 +302,9 @@
 
                         label: "BMI",
 
-                        data: [
-
-                            <% history.forEach(record => { %>
-
-                                <%= record.bmi %>,
-
-                            <% }) %>
-
-                        ]
+                        data: <%- JSON.stringify(
+                            history.map(record => record.bmi)
+                        ) %>
 
                     }
 
