@@ -532,6 +532,7 @@ app.post("/addWorkout", requireLogin, (req, res) => {
     );
 
 });
+
 // ==========================
 // Exercise History
 // ==========================
