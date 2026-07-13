@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water History</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>Fitness Dashboard</h1>
+</header>
+
+<%- include('partials/nav') %>
+
+<div class="container">
+
+    <h2>💧 Water History</h2>
+
+    <p>
+        <a href="/water" class="green-link">
+            ← Back to Water Tracker
+        </a>
+    </p>
+
+    <div class="history-card">
+
+        <% if(days.length===0){ %>
+
+            <p>No water history yet.</p>
+
+        <% }else{ %>
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>Date</th>
+                    <th>Total Intake</th>
+                    <th>Status</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            <% days.forEach(day=>{ %>
+
+                <tr>
+
+                    <td>
+                        <%= new Date(day.logDate).toLocaleDateString() %>
+                    </td>
+
+                    <td>
+                        <%= day.total %> ml
+                    </td>
+
+                    <td>
+
+                        <% if(day.total>=goal){ %>
+
+                            <span class="goal-hit">
+                                Goal Hit
+                            </span>
+
+                        <% }else{ %>
+
+                            <span class="goal-miss">
+                                Under Goal
+                            </span>
+
+                        <% } %>
+
+                    </td>
+
+                </tr>
+
+            <% }) %>
+
+            </tbody>
+
+        </table>
+
+        <% } %>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

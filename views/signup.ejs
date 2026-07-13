@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Create Account</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+</head>
+
+
+<body>
+
+
+<header>
+    <h1>Fitness Dashboard</h1>
+</header>
+
+
+
+<div class="container">
+
+
+    <h2>Create Account</h2>
+
+
+
+    <% if(error){ %>
+
+        <p style="color:red; text-align:center;">
+            <%= error %>
+        </p>
+
+    <% } %>
+
+
+
+
+
+    <form action="/signup" method="POST" onsubmit="return validatePassword()">
+
+
+
+        <label>
+            Username
+        </label>
+
+
+        <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            required
+        >
+
+
+
+
+        <label>
+            Email
+        </label>
+
+
+        <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            required
+        >
+
+
+
+
+        <label>
+            Password
+        </label>
+
+
+        <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Password"
+            required
+        >
+
+
+
+
+        
+
+
+
+
+
+
+        <label>
+            Confirm Password
+        </label>
+
+
+        <input
+            type="password"
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            required
+        >
+
+
+<!-- Password Rules -->
+
+        <ul style="font-size:14px; padding-left:20px;">
+
+
+            <li id="length">
+                At least 8 characters
+            </li>
+
+
+            <li id="lower">
+                One lowercase letter
+            </li>
+
+
+            <li id="upper">
+                One uppercase letter
+            </li>
+
+
+        </ul>
+
+
+
+        <button type="submit">
+            Create Account
+        </button>
+
+
+
+    </form>
+
+
+
+
+
+    <p style="text-align:center;">
+
+        Already have an account?
+
+        <a href="/login">
+            Log in
+        </a>
+
+    </p>
+
+
+
+</div>
+
+
+
+
+
+
+
+<script>
+
+
+const password =
+document.getElementById("password");
+
+
+
+const lengthRule =
+document.getElementById("length");
+
+
+const lowerRule =
+document.getElementById("lower");
+
+
+const upperRule =
+document.getElementById("upper");
+
+
+
+
+
+password.addEventListener("input", function(){
+
+
+    let value = password.value;
+
+
+
+    // Check 8 characters
+
+    if(value.length >= 8){
+
+        lengthRule.style.color = "green";
+
+    }
+    else{
+
+        lengthRule.style.color = "red";
+
+    }
+
+
+
+
+
+    // Check lowercase
+
+    if(/[a-z]/.test(value)){
+
+
+        lowerRule.style.color = "green";
+
+    }
+    else{
+
+        lowerRule.style.color = "red";
+
+    }
+
+
+
+
+
+    // Check uppercase
+
+    if(/[A-Z]/.test(value)){
+
+
+        upperRule.style.color = "green";
+
+    }
+    else{
+
+        upperRule.style.color = "red";
+
+    }
+
+
+});
+
+
+
+
+
+
+
+
+function validatePassword(){
+
+
+    let pass =
+    document.getElementById("password").value;
+
+
+
+    let confirm =
+    document.getElementById("confirmPassword").value;
+
+
+
+
+
+    if(pass.length < 8){
+
+        alert("Password must be at least 8 characters!");
+
+        return false;
+
+    }
+
+
+
+
+
+    if(!/[a-z]/.test(pass)){
+
+
+        alert("Password must contain one lowercase letter!");
+
+        return false;
+
+    }
+
+
+
+
+
+    if(!/[A-Z]/.test(pass)){
+
+
+        alert("Password must contain one uppercase letter!");
+
+        return false;
+
+    }
+
+
+
+
+
+    if(pass !== confirm){
+
+
+        alert("Passwords do not match!");
+
+        return false;
+
+    }
+
+
+
+
+
+    return true;
+
+
+}
+
+
+
+</script>
+
+
+
+
+</body>
+
+</html>

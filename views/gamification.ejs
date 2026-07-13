@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Quest Zone</title>
+
+<script>
+    // Real accounts live in MySQL/session — there is no client-side auth.js.
+    // gamification.js keys XP/badge progress off this value.
+    const CURRENT_USER = "<%= account.email %>";
+</script>
+<script src="/gamification.js"></script>
+<link rel="stylesheet" href="/style.css">
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        width: 90%;
+        max-width: 800px;
+        margin: auto;
+        padding-bottom: 50px;
+    }
+
+    .card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        border: 1px solid #334155;
+    }
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+        margin-top: 0;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #22c55e;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 10px;
+    }
+
+    .profile-summary { text-align: center; padding: 15px 0; }
+    .level-badge{
+    width:90px;
+    height:90px;
+    margin:auto;
+    border-radius:50%;
+    background:#22c55e;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-size:28px;
+    font-weight:bold;
+    }   
+    .progress-container { width: 100%; background-color: #334155; border-radius: 9999px; margin: 15px 0; overflow: hidden; }
+    .progress-bar { height: 16px; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 9999px; transition: width 0.4s ease; width: 0%; }
+    .streak-fire { font-size: 22px; color: #f97316; font-weight: bold; margin-top: 10px; }
+
+    .badges-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+    }
+
+    .badge-item{
+    background:white;
+    border:1px solid #000000;
+    border-radius:12px;
+    padding:18px;
+    text-align:center;
+    min-height:180px;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    }
+
+    .badge-item.unlocked{
+    background:#d1d5db;
+    border:2px solid #22c55e;
+    opacity:0.75;
+    }
+    
+    .badge-name{
+    font-size:20px;
+    font-weight:bold;
+    color:#111;
+    margin-top:10px;
+    line-height:1.3;
+    }
+
+    .badge-desc{
+    margin-top:18px;
+    color:#666;
+    font-size:15px;
+    line-height:1.4;
+    }
+    
+    .challenge-list { display: flex; flex-direction: column; gap: 10px; }
+    .challenge-item {
+        background: #f4f6f8;
+        padding: 14px;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .challenge-info { display: flex; flex-direction: column; gap: 4px; }
+    .challenge-title { font-weight: bold; font-size: 14px; }
+    .challenge-reward { font-size: 12px; color: #10b981; font-weight: bold; }
+    .challenge-btn{
+    width:100px;
+    height:40px;
+    background:#22c55e;
+    border:none;
+    color:white;
+    border-radius:5px;
+    font-weight:bold;
+    cursor:pointer;
+    }
+    .challenge-btn:hover{
+    background:#16a34a;
+    }
+    .challenge-btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+
+    .leaderboard-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .leaderboard-table th { text-align: left; padding: 12px; background: #0f172a; color: #94a3b8; font-size: 13px; font-weight: bold; border-bottom: 2px solid #334155; }
+    .leaderboard-table td { padding: 12px; border-bottom: 1px solid #334155; font-size: 14px; }
+    .leaderboard-row.highlight-user { background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; }
+    .rank-cell { font-weight: bold; font-size: 15px; color: #e2e8f0; width: 45px; }
+</style>
+</head>
+
+<body>
+
+<header class="quest-header">
+    <h1>The Quest Zone </h1>
+</header>
+
+<%- include("partials/nav") %>
+
+<div class="grid-container">
+
+    <!-- user profile -->
+    <div class="card">
+        <div class="card-title">👤 User Profile</div>
+        <div class="profile-summary">
+            <p style="margin-top: 0; font-size: 14px; color: #94a3b8;">User: <span id="userEmail" style="font-weight:bold; color: #22c55e;"></span></p>
+            <div class="level-badge">
+                <span>Lvl&nbsp;</span>
+                <span id="displayLevel">1</span>
+            </div>
+
+            <h4 style="margin: 0; color: #404449;">Experience Points (XP)</h4>
+            <div class="progress-container">
+                <div id="xpBar" class="progress-bar"></div>
+            </div>
+            <p style="margin: 0; font-size: 13px; color: #94a3b8;"><span id="displayXP">0</span> / <span id="displayNextXP">100</span> XP to next level</p>
+
+            <div class="streak-fire">
+                🔥Streak: <span id="displayStreak">0</span> days
+            </div>
+        </div>
+    </div>
+
+    <!-- showcase badges -->
+    <div class="card">
+        <div class="card-title">🏅Achievements</div>
+        <div class="badges-grid" id="badgesContainer">
+        </div>
+    </div>
+
+    <!-- Daily Challenges -->
+    <div class="card">
+        <div class="card-title">⚡️ Daily Quests</div>
+        <div class="challenge-list" id="challengeContainer">
+        </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="card">
+        <div class="card-title">🏆Leaderboard</div>
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>User</th>
+                    <th>Level</th>
+                    <th>Total XP</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardContainer">
+                <!-- Dynamically populated including user's live stats -->
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+function loadDashboard() {
+
+    document.getElementById("userEmail").innerText = CURRENT_USER;
+
+    let allData = getGamificationData();
+    let stats = allData[CURRENT_USER];
+
+    // Profile
+    document.getElementById("displayLevel").innerText = stats.level;
+    document.getElementById("displayXP").innerText = stats.xp;
+
+    let nextLevelXP = stats.level * 100;
+    document.getElementById("displayNextXP").innerText = nextLevelXP;
+    document.getElementById("displayStreak").innerText = stats.streak;
+
+    let percentage = (stats.xp / nextLevelXP) * 100;
+    document.getElementById("xpBar").style.width = percentage + "%";
+
+    // Badges
+    const badgesContainer = document.getElementById("badgesContainer");
+
+    badgesContainer.innerHTML = AVAILABLE_BADGES.map(badge => {
+
+        let unlocked = stats.unlockedBadges.includes(badge.id);
+
+        return `
+        <div class="badge-item ${unlocked ? "unlocked" : ""}">
+            <div class="badge-name">${badge.name}</div>
+             <div class="badge-desc">${badge.desc}</div>
+        </div>
+        `;
+
+    }).join("");
+
+    // Daily Quests
+    const challengeContainer = document.getElementById("challengeContainer");
+
+    challengeContainer.innerHTML = DAILY_QUESTS.map(quest=>{
+
+        let claimed =
+        stats.completedChallenges.includes(quest.id);
+
+        return `
+        <div class="challenge-item">
+
+            <div class="challenge-info">
+                <span class="challenge-title">${quest.title}</span>
+                <span class="challenge-reward">
+                    +${quest.reward} XP
+                </span>
+            </div>
+
+            <button
+                class="challenge-btn"
+                ${claimed ? "disabled" : ""}
+                onclick="claimQuest('${quest.id}')">
+
+                ${claimed ? "Claimed ✓" : "Claim"}
+
+            </button>
+
+        </div>
+        `;
+
+    }).join("");
+
+    // Leaderboard
+    let leaderboard = getLiveLeaderboard();
+
+    document.getElementById("leaderboardContainer").innerHTML =
+    leaderboard.map((user,index)=>{
+
+        let self = user.email===CURRENT_USER;
+
+        return `
+        <tr class="${self ? "highlight-user" : ""}">
+            <td class="rank-cell">#${index+1}</td>
+            <td>${user.name}${self ? " (You)" : ""}</td>
+            <td>${user.level}</td>
+            <td>${user.totalXP}</td>
+        </tr>
+        `;
+
+    }).join("");
+
+}
+
+function claimQuest(id){
+    claimDailyQuest(id);
+    loadDashboard();
+}
+
+window.addEventListener("xpUpdated",loadDashboard);
+
+window.onload = loadDashboard;
+</script>
+</body>
+</html>

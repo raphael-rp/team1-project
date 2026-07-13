@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Search Meals</title>
+
+<link rel="stylesheet" href="/style.css">
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>Search Meals</h1>
+
+</header>
+
+<%- include('partials/nav') %>
+
+
+
+<div class="container">
+
+
+<h2>Search Meal</h2>
+
+
+<form action="/searchMeal" method="GET">
+
+    <input
+        type="text"
+        name="search"
+        placeholder="Enter meal name..."
+        value="<%= search || '' %>"
+    >
+
+</form>
+
+
+
+<br>
+
+
+
+<% if(meals.length === 0){ %>
+
+    <p>No meals found.</p>
+
+
+<% } else { %>
+
+
+    <% meals.forEach(meal => { %>
+
+
+        <div class="search-card">
+
+
+            <h3>
+                <%= meal.mealName %>
+            </h3>
+
+
+
+            <p>
+
+                <strong>
+                    Calories:
+                </strong>
+
+                <%= meal.calories %> kcal
+
+            </p>
+
+
+
+            <p>
+
+                <strong>
+                    Date:
+                </strong>
+
+
+                <%= new Date(meal.mealDate).toISOString().split("T")[0] %>
+
+            </p>
+
+
+
+        </div>
+
+
+    <% }) %>
+
+
+<% } %>
+
+
+
+</div>
+
+
+
+</body>
+</html>

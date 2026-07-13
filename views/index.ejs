@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            border-left: 4px solid #22c55e;
+        }
+
+        .card .label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .card .value {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 4px 0 2px;
+        }
+
+        .card .sub {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .card.blue { border-left-color: #3b82f6; }
+        .card.purple { border-left-color: #8b5cf6; }
+        .card.orange { border-left-color: #f59e0b; }
+        .card.pink { border-left-color: #ec4899; }
+
+        .progress-bar {
+            margin-top: 8px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .progress-bar .fill {
+            height: 100%;
+            background: #22c55e;
+            border-radius: 20px;
+            width: 0%;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .box {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .box h3 {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .bmi-overview {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .bmi-overview .number {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .bmi-overview .status {
+            padding: 4px 16px;
+            border-radius: 20px;
+            background: #dcfce7;
+            color: #16a34a;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .xp-streak {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .xp-card {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            padding: 18px;
+            border-radius: 10px;
+        }
+
+        .streak-card {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 18px;
+            border-radius: 10px;
+        }
+
+        .xp-card .label, .streak-card .label {
+            font-size: 13px;
+            opacity: 0.85;
+        }
+
+        .xp-card .value, .streak-card .value {
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+        .bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 120px;
+            padding-top: 10px;
+            gap: 4px;
+        }
+
+        .bar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .bar-item .bar {
+            width: 100%;
+            max-width: 30px;
+            background: #22c55e;
+            border-radius: 3px 3px 0 0;
+            min-height: 4px;
+        }
+
+        .bar-item .bar-label {
+            font-size: 10px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .bar-item .bar-value {
+            font-size: 9px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .empty-box {
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            padding: 30px 10px;
+        }
+
+        .empty-box a {
+            color: #22c55e;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        @media (max-width: 640px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+            .xp-streak {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🏋️ Fitness Dashboard</h1>
+        <p style="margin:8px 0 0; font-size:14px; opacity:.9;">👋 Welcome back, <%= account.username %></p>
+    </header>
+
+    <%- include('partials/nav') %>
+
+    <div class="container" style="max-width:1100px;">
+
+        <!-- Stats (live from the database) -->
+        <div class="grid">
+
+            <div class="card">
+                <div class="label">🔥 Calories Today</div>
+                <div class="value"><%= todayCalories.toLocaleString() %></div>
+                <div class="sub">Goal: <%= calorieGoal.toLocaleString() %></div>
+                <div class="progress-bar"><div class="fill" style="width:<%= Math.min(Math.round((todayCalories / calorieGoal) * 100), 100) %>%"></div></div>
+            </div>
+
+            <div class="card blue">
+                <div class="label">💧 Water</div>
+                <div class="value"><%= (waterConsumed / 1000).toFixed(1) %>L</div>
+                <div class="sub">Goal: <%= (waterGoal / 1000).toFixed(1) %>L</div>
+                <div class="progress-bar"><div class="fill" style="width:<%= Math.min(Math.round((waterConsumed / waterGoal) * 100), 100) %>%; background:#3b82f6;"></div></div>
+            </div>
+
+            <div class="card purple">
+                <div class="label">🏃 Exercise Today</div>
+                <div class="value"><%= workoutMinutes %> min</div>
+                <div class="sub">🔥 <%= workoutCalories %> cal burned</div>
+            </div>
+
+            <div class="card orange">
+                <div class="label">📅 Meals Today</div>
+                <div class="value"><%= mealsLoggedToday %></div>
+                <div class="sub"><%= mealsLoggedToday === 0 ? "No meals logged yet" : "logged today" %></div>
+            </div>
+
+            <div class="card pink">
+                <div class="label">⚖️ Weight</div>
+                <% if (latestBmi) { %>
+                    <div class="value"><%= Number(latestBmi.weight).toFixed(1) %> kg</div>
+                    <div class="sub">BMI: <%= Number(latestBmi.bmi).toFixed(1) %> (<%= latestBmi.category %>)</div>
+                <% } else { %>
+                    <div class="value">—</div>
+                    <div class="sub"><a href="/bmi" style="color:#ec4899;">Log your first BMI</a></div>
+                <% } %>
+            </div>
+
+        </div>
+
+        <!-- XP & Streak (Quest Zone progress, stored locally per-device) -->
+        <div class="xp-streak">
+            <div class="xp-card">
+                <div class="label">⭐ Experience</div>
+                <div class="value" id="dashXP">— XP</div>
+                <div style="font-size:13px; opacity:0.8;" id="dashXPSub">Loading...</div>
+            </div>
+            <div class="streak-card">
+                <div class="label">🔥 Streak</div>
+                <div class="value" id="dashStreak">—</div>
+                <div style="font-size:13px; opacity:0.9;"><a href="/gamification" style="color:white;">Visit the Quest Zone →</a></div>
+            </div>
+        </div>
+
+        <!-- BMI -->
+        <div class="box" style="margin-bottom:20px;">
+            <h3>⚖️ BMI Overview</h3>
+            <% if (latestBmi) { %>
+                <div class="bmi-overview">
+                    <span class="number"><%= Number(latestBmi.bmi).toFixed(1) %></span>
+                    <span class="status"><%= latestBmi.category %></span>
+                    <span style="color:#666; font-size:14px;">Height: <%= Number(latestBmi.height) %> cm · Weight: <%= Number(latestBmi.weight) %> kg</span>
+                </div>
+            <% } else { %>
+                <div class="empty-box">No BMI records yet — <a href="/bmi">add one</a> to see your overview here.</div>
+            <% } %>
+        </div>
+
+        <!-- Charts -->
+        <div class="row">
+            <div class="box">
+                <h3>📊 Weekly Calories</h3>
+                <% const maxCal = Math.max(...weekCalories.map(d => d.total), 1); %>
+                <div class="bars">
+                    <% weekCalories.forEach(day => { %>
+                        <div class="bar-item">
+                            <span class="bar-value"><%= day.total.toLocaleString() %></span>
+                            <div class="bar" style="height:<%= Math.max(Math.round((day.total / maxCal) * 100), day.total > 0 ? 4 : 0) %>px; background:<%= day.label === 'Today' ? '#3b82f6' : (day.total > calorieGoal ? '#ef4444' : '#22c55e') %>;"></div>
+                            <span class="bar-label"><%= day.label %></span>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+
+            <div class="box">
+                <h3>📉 Weight Progress</h3>
+                <% if (bmiTrend.length === 0) { %>
+                    <div class="empty-box">No BMI history yet — <a href="/bmi">log your weight</a> to build this chart.</div>
+                <% } else { %>
+                    <% const weights = bmiTrend.map(r => Number(r.weight));
+                       const maxW = Math.max(...weights);
+                       const minW = Math.min(...weights);
+                       const range = Math.max(maxW - minW, 1); %>
+                    <div class="bars">
+                        <% bmiTrend.forEach((record, i) => { %>
+                            <div class="bar-item">
+                                <span class="bar-value"><%= Number(record.weight).toFixed(1) %></span>
+                                <div class="bar" style="height:<%= Math.max(Math.round(((Number(record.weight) - minW) / range) * 90) + 10, 10) %>px; background:<%= i === bmiTrend.length - 1 ? '#3b82f6' : '#8b5cf6' %>;"></div>
+                                <span class="bar-label"><%= new Date(record.recordDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) %></span>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <p style="text-align:center; color:#888; font-size:13px; margin-top:10px;">
+            💪 Keep going, <%= account.username %>! You're doing great!
+        </p>
+
+    </div>
+
+    <script>
+        const CURRENT_USER = "<%= account.email %>";
+    </script>
+    <script src="/gamification.js"></script>
+    <script>
+        const stats = getGamificationData()[CURRENT_USER];
+        document.getElementById("dashXP").innerText = stats.xp + " XP";
+        document.getElementById("dashXPSub").innerText = "Level " + stats.level + " · " + (stats.level * 100 - stats.xp) + " XP to next level";
+        document.getElementById("dashStreak").innerText = stats.streak + " day" + (stats.streak === 1 ? "" : "s");
+    </script>
+
+</body>
+</html>

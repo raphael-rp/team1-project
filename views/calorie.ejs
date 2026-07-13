@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Tracker</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>Calorie Tracker</h1>
+</header>
+
+<%- include('partials/nav') %>
+
+<div class="container">
+
+    <p class="user-info">
+        Logged in as
+        <b><%= account.username %></b>
+    </p>
+
+    <h2>Meal Management</h2>
+
+    <p>
+        Manage your daily meals and calorie intake.
+    </p>
+
+    <div class="button-grid">
+
+        <button onclick="window.location.href='/addMeal'">
+            ➕ Add Meal
+        </button>
+
+        <button onclick="window.location.href='/editMeal'">
+            ✏️ Edit / Delete Meals
+        </button>
+
+        <button onclick="window.location.href='/foodhistory'">
+            📜 Food History
+        </button>
+
+        <button onclick="window.location.href='/searchMeal'">
+            🔍 Search Meals
+        </button>
+
+    </div>
+
+</div>
+
+</body>
+</html>

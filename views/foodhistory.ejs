@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Food History</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>Food History</h1>
+
+</header>
+
+<%- include('partials/nav') %>
+
+
+
+<div class="container">
+
+
+    <p class="user-info">
+
+        Logged in as
+
+        <b>
+            <%= account.username %>
+        </b>
+
+    </p>
+
+
+
+    <h2>Meal History</h2>
+
+
+
+    <div class="total">
+
+        Total Calories:
+
+        <%= meals.reduce((sum, meal) => sum + Number(meal.calories), 0) %>
+
+        kcal
+
+    </div>
+
+
+
+
+    <% if(meals.length === 0){ %>
+
+
+        <p>
+            No meals recorded yet.
+        </p>
+
+
+    <% } else { %>
+
+
+
+        <% meals.forEach(meal => { %>
+
+
+            <div class="history-card">
+
+
+                <h3>
+                    <%= meal.mealName %>
+                </h3>
+
+
+
+                <p>
+
+                    <strong>
+                        Calories:
+                    </strong>
+
+                    <%= meal.calories %> kcal
+
+                </p>
+
+
+
+
+                <p>
+
+                    <strong>
+                        Date:
+                    </strong>
+
+
+                    <%= new Date(meal.mealDate).toISOString().split("T")[0] %>
+
+                </p>
+
+
+
+            </div>
+
+
+
+        <% }) %>
+
+
+
+    <% } %>
+
+
+
+</div>
+
+
+
+</body>
+
+</html>

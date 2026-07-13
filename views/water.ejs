@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Tracker</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>Fitness Dashboard</h1>
+</header>
+
+<%- include('partials/nav') %>
+
+<div class="container">
+
+<p class="user-info">
+    Logged in as
+    <b><%= account.username %></b>
+</p>
+
+<h2>💧 Water Tracker</h2>
+
+    <form action="/water-goal" method="POST" class="goal-form">
+        <input
+            type="number"
+            name="goalMl"
+            value="<%= goal %>"
+            min="250"
+            step="50"
+            required>
+
+        <button type="submit">
+            Save Goal
+        </button>
+    </form>
+
+
+    <div class="summary-grid">
+
+        <div class="summary-card">
+            <h3>Today's Goal</h3>
+            <h2><%= goal %> ml</h2>
+        </div>
+
+        <div class="summary-card">
+            <h3>Consumed</h3>
+            <h2><%= consumed %> ml</h2>
+        </div>
+
+        <div class="summary-card">
+            <h3>Remaining</h3>
+            <h2><%= remaining %> ml</h2>
+        </div>
+
+    </div>
+
+    <div class="progress-card">
+
+        <div class="progress-top">
+
+            <span>Daily Progress</span>
+
+            <span><%= pct %>%</span>
+
+        </div>
+
+        <div class="progress">
+
+            <div
+                class="progress-fill"
+                style="width:<%= pct %>%;">
+            </div>
+
+        </div>
+
+        <p class="progress-text">
+
+            <%= consumed %> /
+            <%= goal %> ml
+
+        </p>
+
+    </div>
+
+    <div class="quick-add">
+
+        <h2>Quick Add</h2>
+
+        <div class="quick-buttons">
+
+            <form method="POST" action="/water-add">
+                <button type="submit" name="amount" value="150">
+                    +150 ml
+                </button>
+            </form>
+
+            <form method="POST" action="/water-add">
+                <button type="submit" name="amount" value="250">
+                    +250 ml
+                </button>
+            </form>
+
+            <form method="POST" action="/water-add">
+                <button type="submit" name="amount" value="500">
+                    +500 ml
+                </button>
+            </form>
+
+        </div>
+
+        <form
+            method="POST"
+            action="/water-add"
+            class="custom-water">
+
+            <input
+                type="number"
+                name="amount"
+                placeholder="Custom amount (ml)"
+                required>
+
+            <button type="submit">
+                Add Water
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="history-card">
+
+        <div class="history-top">
+
+            <h2>Today's Log</h2>
+
+            <a href="/water-history">
+                View History
+            </a>
+
+        </div>
+
+        <% if(logs.length===0){ %>
+
+            <p>No water logged today.</p>
+
+        <% }else{ %>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Time</th>
+
+                        <th>Amount</th>
+
+                        <th></th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                <% logs.forEach(log=>{ %>
+
+                    <tr>
+
+                        <td>
+
+                            <%= new Date(log.loggedAt).toLocaleTimeString([],{
+
+                                hour:'2-digit',
+                                minute:'2-digit'
+
+                            }) %>
+
+                        </td>
+
+                        <td>
+
+                            <%= log.amountMl %> ml
+
+                        </td>
+
+                        <td>
+
+                            <form
+                                action="/water-delete/<%= log.waterId %>"
+                                method="POST">
+
+                                <button class="delete-btn">
+
+                                    Remove
+
+                                </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                <% }) %>
+
+                </tbody>
+
+            </table>
+
+        <% } %>
+
+    </div>
+
+</div>
+
+</body>
+</html>

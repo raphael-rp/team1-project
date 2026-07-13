@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add Meal</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+</head>
+
+
+<body>
+
+
+<header>
+    <h1>Add Meal</h1>
+</header>
+
+<%- include('partials/nav') %>
+
+
+<div class="container">
+
+
+    <p class="user-info">
+        Logged in as
+        <b><%= account.username %></b>
+    </p>
+
+
+
+    <h2>Add New Meal</h2>
+
+
+
+    <form action="/addMeal" method="POST">
+
+
+        <label for="mealName">
+            Meal Name
+        </label>
+
+
+        <input
+            type="text"
+            id="mealName"
+            name="mealName"
+            required
+        >
+
+
+
+
+        <label for="calories">
+            Calories
+        </label>
+
+
+        <input
+            type="number"
+            id="calories"
+            name="calories"
+            min="0"
+            required
+        >
+
+
+
+
+        <label for="mealDate">
+            Date
+        </label>
+
+
+        <input
+            type="date"
+            id="mealDate"
+            name="mealDate"
+            required
+        >
+
+
+
+
+        <button type="submit">
+            Save Meal
+        </button>
+
+
+    </form>
+
+
+</div>
+
+
+
+<script>
+
+const today = new Date()
+.toISOString()
+.split("T")[0];
+
+
+document.getElementById("mealDate").max = today;
+
+
+</script>
+
+
+
+</body>
+
+</html>
