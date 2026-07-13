@@ -179,7 +179,7 @@ function addXP(amount, actionName) {
         leveledUp = true;
         targetXP = stats.level * 100;
     }
-    
+
     saveGamificationData(data);
 
     // Build notification message instead of using default alert()
