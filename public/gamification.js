@@ -171,6 +171,15 @@ function addXP(amount, actionName) {
 
     // Run badge audit
     let badgeReport = checkAndUnlockBadges(stats);
+    targetXP = stats.level * 100;
+
+    while (stats.xp >= targetXP) {
+        stats.xp -= targetXP;
+        stats.level++;
+        leveledUp = true;
+        targetXP = stats.level * 100;
+    }
+
     saveGamificationData(data);
 
     // Build notification message instead of using default alert()
