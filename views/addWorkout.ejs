@@ -47,10 +47,11 @@
 
         <h2>Add Workout</h2>
 
-        <form
-            action="/addWorkout"
-            method="POST"
-        >
+            <form
+                id="workoutForm"
+                action="/addWorkout"
+                method="POST"
+            >
 
             <label>
                 Exercise
@@ -99,15 +100,28 @@
                 name="caloriesBurned"
                 readonly
             >
-
+            
             <label>
                 Workout Date
             </label>
 
+            <div style="display:flex; gap:10px;">
+
+                <select id="day">
+                </select>
+
+                <select id="month">
+                </select>
+
+                <select id="year">
+                </select>
+
+            </div>
+
             <input
-                type="date"
+                type="hidden"
+                id="workoutDate"
                 name="workoutDate"
-                required
             >
 
             <label>
@@ -116,6 +130,7 @@
 
             <input
                 type="time"
+                id="workoutTime"
                 name="workoutTime"
                 required
             >
@@ -164,6 +179,132 @@
         activity.addEventListener("change", calculateCalories);
 
         minutes.addEventListener("input", calculateCalories);
+
+
+        const workoutTime = document.querySelector('input[name="workoutTime"]');
+
+        function updateTimeLimit() {
+
+            const today = new Date().toISOString().split("T")[0];
+
+            if (workoutDate.value === today) {
+
+                const now = new Date();
+
+                const currentTime =
+                    String(now.getHours()).padStart(2, "0") +
+                    ":" +
+                    String(now.getMinutes()).padStart(2, "0");
+
+                workoutTime.max = currentTime;
+
+            } else {
+
+                workoutTime.removeAttribute("max");
+
+            }
+
+        }
+
+        
+        const workoutForm = document.getElementById("workoutForm");
+
+        workoutForm.addEventListener("submit", function (event) {
+
+            workoutDate.value =
+            year.value + "-" +
+            String(month.value).padStart(2, "0") + "-" +
+            String(day.value).padStart(2, "0");
+
+            const selectedDate = new Date(workoutDate.value);
+            const now = new Date();
+
+            // Reset today's time to midnight for date comparison
+            const today = new Date(now);
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate > today) {
+
+                alert("Workout date cannot be in the future.");
+                event.preventDefault();
+                return;
+
+            }
+
+            if (workoutDate.value === today.toISOString().split("T")[0]) {
+
+                const selectedTime = workoutTime.value;
+
+                const currentTime =
+                    String(now.getHours()).padStart(2, "0") +
+                    ":" +
+                    String(now.getMinutes()).padStart(2, "0");
+
+                if (selectedTime > currentTime) {
+
+                    alert("Workout time cannot be in the future.");
+                    event.preventDefault();
+                    return;
+
+                }
+
+            }
+
+        });
+
+        const day = document.getElementById("day");
+        const month = document.getElementById("month");
+        const year = document.getElementById("year");
+        const workoutDate = document.getElementById("workoutDate");
+
+        const today = new Date();
+
+        const currentDay = today.getDate();
+        const currentMonth = today.getMonth() + 1;
+        const currentYear = today.getFullYear();
+        // ==========================
+        // Populate Year Dropdown
+        // ==========================
+
+        for (let y = currentYear; y >= 2000; y--) {
+
+            year.innerHTML +=
+                `<option value="${y}">${y}</option>`;
+
+        }
+
+
+        // ==========================
+        // Populate Month Dropdown
+        // ==========================
+
+        for (let m = 1; m <= 12; m++) {
+
+            month.innerHTML +=
+                `<option value="${m}">${m}</option>`;
+
+        }
+
+
+        // ==========================
+        // Populate Day Dropdown
+        // ==========================
+
+        for (let d = 1; d <= 31; d++) {
+
+            day.innerHTML +=
+                `<option value="${d}">${d}</option>`;
+
+        }
+
+
+        // ==========================
+        // Default to Today
+        // ==========================
+
+        day.value = currentDay;
+        month.value = currentMonth;
+        year.value = currentYear;
 
     </script>
 
