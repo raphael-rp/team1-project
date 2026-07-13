@@ -171,6 +171,15 @@ function addXP(amount, actionName) {
 
     // Run badge audit
     let badgeReport = checkAndUnlockBadges(stats);
+    targetXP = stats.level * 100;
+
+    while (stats.xp >= targetXP) {
+        stats.xp -= targetXP;
+        stats.level++;
+        leveledUp = true;
+        targetXP = stats.level * 100;
+    }
+    
     saveGamificationData(data);
 
     // Build notification message instead of using default alert()
@@ -240,17 +249,29 @@ function claimDailyQuest(questId) {
         stats.completedChallenges = [];
     }
 
-    if (stats.completedChallenges.includes(questId)) return; // claimed already
+    if (stats.completedChallenges.includes(questId)) return;
 
     let quest = DAILY_QUESTS.find(q => q.id === questId);
     if (!quest) return;
 
+    // Prevent claiming without completing the task
+    if (questId === "quest_workout" && stats.workouts < 1) {
+        return showToast("❌ Complete a workout first!");
+    }
+
+    if (questId === "quest_calorie" && stats.meals < 1) {
+        return showToast("❌ Log a meal first!");
+    }
+
+    if (questId === "quest_water" && stats.waterGoals < 1) {
+       return showToast("❌ Reach today's water goal first!");
+    }
+
     stats.completedChallenges.push(questId);
     saveGamificationData(data);
 
-    addXP(quest.reward, quest.action);
+    addXP(quest.reward, quest.action);  
 }
-
 // ===============================
 // TEAMMATE INTEGRATION FUNCTIONS
 // ===============================
