@@ -23,6 +23,10 @@
         <p id="msg"></p>
     <% } %>
 
+    <% if (typeof success !== 'undefined' && success) { %>
+        <p style="color:green; text-align:center;"><%= success %></p>
+    <% } %>
+
     <form action="/login" method="POST">
         <input
             type="email"
@@ -43,6 +47,10 @@
     <p style="text-align:center;">
         Don't have an account?
         <a href="/signup">Create one</a>
+    </p>
+
+    <p style="text-align:center;">
+        <a href="/forgot-password">Forgot your password?</a>
     </p>
 
 </div>

@@ -1006,7 +1006,12 @@ app.get("/gamification", requireLogin, (req, res) => {
 // Login
 // ==========================
 app.get("/login", (req, res) => {
-    res.render("login", { error: null });
+    res.render("login", {
+        error: null,
+        success: req.query.reset === "success"
+            ? "Password updated! You can now log in with your new password."
+            : null
+    });
 });
 
 app.post("/login", (req, res) => {
@@ -1032,6 +1037,78 @@ app.post("/login", (req, res) => {
             }
             req.session.account = account;
             res.redirect("/");
+        }
+    );
+});
+
+// ==========================
+// Forgot Password
+// ==========================
+app.get("/forgot-password", (req, res) => {
+    res.render("forgot-password", { error: null, success: null });
+});
+
+app.post("/forgot-password", (req, res) => {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    if (!email || !newPassword || !confirmPassword) {
+        return res.render("forgot-password", {
+            error: "Please fill all fields!",
+            success: null
+        });
+    }
+
+    if (newPassword !== confirmPassword) {
+        return res.render("forgot-password", {
+            error: "Passwords do not match!",
+            success: null
+        });
+    }
+
+    if (newPassword.length < 8 || !/[a-z]/.test(newPassword) || !/[A-Z]/.test(newPassword)) {
+        return res.render("forgot-password", {
+            error: "Password must be at least 8 characters and include one uppercase and one lowercase letter.",
+            success: null
+        });
+    }
+
+    connection.query(
+        "SELECT * FROM account WHERE email = ?",
+        [email.toLowerCase()],
+        (err, results) => {
+            if (err) {
+                console.log(err);
+                return res.send("Database Error");
+            }
+
+            if (results.length === 0) {
+                return res.render("forgot-password", {
+                    error: "No account found with that email.",
+                    success: null
+                });
+            }
+
+            const account = results[0];
+
+            if (newPassword === account.password) {
+                return res.render("forgot-password", {
+                    error: "New password must be different from your current password.",
+                    success: null
+                });
+            }
+
+            connection.query(
+                "UPDATE account SET password = ? WHERE email = ?",
+                [newPassword, email.toLowerCase()],
+                (err) => {
+                    if (err) {
+                        console.log(err);
+                        return res.send("Database Error");
+                    }
+
+                    res.redirect("/login?reset=success");
+                }
+            );
         }
     );
 });
