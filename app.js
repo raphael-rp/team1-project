@@ -1017,25 +1017,21 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
     const { email, password } = req.body;
     connection.query(
-        "SELECT * FROM account WHERE email = ?",
-        [email.toLowerCase()],
+        "SELECT * FROM account WHERE email = ? AND password = SHA2(?, 256)",
+        [email.toLowerCase(), password],
         (err, results) => {
             if (err) {
                 console.log(err);
                 return res.send("Database Error");
             }
+
             if (results.length === 0) {
                 return res.render("login", {
                     error: "Invalid email or password."
                 });
             }
-            const account = results[0];
-            if (password !== account.password) {
-                return res.render("login", {
-                    error: "Invalid email or password."
-                });
-            }
-            req.session.account = account;
+
+            req.session.account = results[0];
             res.redirect("/");
         }
     );
@@ -1088,25 +1084,34 @@ app.post("/forgot-password", (req, res) => {
                 });
             }
 
-            const account = results[0];
-
-            if (newPassword === account.password) {
-                return res.render("forgot-password", {
-                    error: "New password must be different from your current password.",
-                    success: null
-                });
-            }
-
             connection.query(
-                "UPDATE account SET password = ? WHERE email = ?",
-                [newPassword, email.toLowerCase()],
-                (err) => {
+                "SELECT * FROM account WHERE email = ? AND password = SHA2(?, 256)",
+                [email.toLowerCase(), newPassword],
+                (err, sameResults) => {
                     if (err) {
                         console.log(err);
                         return res.send("Database Error");
                     }
 
-                    res.redirect("/login?reset=success");
+                    if (sameResults.length > 0) {
+                        return res.render("forgot-password", {
+                            error: "New password must be different from your current password.",
+                            success: null
+                        });
+                    }
+
+                    connection.query(
+                        "UPDATE account SET password = SHA2(?, 256) WHERE email = ?",
+                        [newPassword, email.toLowerCase()],
+                        (err) => {
+                            if (err) {
+                                console.log(err);
+                                return res.send("Database Error");
+                            }
+
+                            res.redirect("/login?reset=success");
+                        }
+                    );
                 }
             );
         }
@@ -1147,10 +1152,10 @@ app.post("/signup", (req, res) => {
             if (results.length > 0) {
                 return res.render("signup", {
                     error: "Email already exists."
-                });
+                }); 
             }
             connection.query(
-                "INSERT INTO account (username, email, password) VALUES (?, ?, ?)",
+                "INSERT INTO account (username, email, password) VALUES (?, ?, SHA2(?, 256))",
                 [username, email.toLowerCase(), password],
                 (err) => {
                     if (err) {

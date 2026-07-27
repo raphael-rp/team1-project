@@ -91,6 +91,44 @@ button:hover{
 }
 
 /* ==========================
+   Password field (plain input + show/hide icon)
+========================== */
+
+.password-field{
+    position:relative;
+    margin-top:5px;
+}
+
+.password-field input{
+    margin-top:0;
+    padding-right:44px;
+}
+
+.toggle-password{
+    position:absolute;
+    top:50%;
+    right:10px;
+    transform:translateY(-50%);
+    width:auto;
+    margin:0;
+    padding:6px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#555;
+}
+
+.toggle-password svg{
+    width:20px;
+    height:20px;
+    display:block;
+    pointer-events:none;
+}
+
+/* ==========================
    Tables (workout / bmi history)
 ========================== */
 

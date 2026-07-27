@@ -15,10 +15,12 @@ CREATE TABLE `account` (
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Passwords are stored as SHA2(plaintext, 256) to match app.js's login/signup queries.
+-- Plaintext originals (for reference only): Anthony=123456, John=password, Mary=qwerty
 INSERT INTO `account` (`accountId`, `username`, `email`, `password`) VALUES
-(1,'Anthony','anthony@gmail.com','123456'),
-(2,'John','john@gmail.com','password'),
-(3,'Mary','mary@gmail.com','qwerty');
+(1,'Anthony','anthony@gmail.com','8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'),
+(2,'John','john@gmail.com','5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'),
+(3,'Mary','mary@gmail.com','65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5');
 
 -- ==========================
 -- Meals
