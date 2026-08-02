@@ -6,4 +6,19 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    environment:
+      MONGODB_URI: mongodb://db:27017/FitnessDashboard
+      PORT: 3000
+    depends_on:
+      - db
     restart: unless-stopped
+
+  db:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - db_data:/data/db
+
+volumes:
+  db_data:

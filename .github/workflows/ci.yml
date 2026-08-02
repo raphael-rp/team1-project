@@ -37,3 +37,29 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Build Docker image
+        run: docker build -t team1-project .
+
+      - name: Smoke test Docker image
+        run: |
+          docker run -d --name smoke-test --network host \
+            -e MONGODB_URI="mongodb://127.0.0.1:27017/FitnessDashboard_test" \
+            -e PORT=3000 \
+            team1-project
+
+          for i in $(seq 1 15); do
+            if curl -sf http://localhost:3000/login > /dev/null; then
+              echo "App responded successfully"
+              break
+            fi
+            if [ "$i" -eq 15 ]; then
+              echo "App did not respond in time"
+              docker logs smoke-test
+              exit 1
+            fi
+            sleep 2
+          done
+
+          docker logs smoke-test
+          docker stop smoke-test
