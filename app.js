@@ -1,12 +1,14 @@
 const express = require("express");
-const mysql = require("mysql2");
+const mongoose = require("mongoose");
 const path = require("path");
-
+require("dotenv").config();
 const session = require("express-session");
+const bcrypt = require("bcrypt");
 
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(session({
     secret: "fitness_secret_key",
     resave: false,
@@ -14,27 +16,62 @@ app.use(session({
 }));
 
 // ==========================
-// MySQL Connection
+// MongoDB Atlas Connection
 // ==========================
-const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "RP738964$",   // Change this to your local MySQL root password
-    database: "c270_anthonygoh"   // Change this if your database has another name
+
+  
+
+// ==========================
+// Mongoose Models
+// ==========================
+
+const accountSchema = new mongoose.Schema({
+    username: String,
+    email: { type: String, unique: true },
+    password: String
 });
+const Account = mongoose.model("Account", accountSchema, "account");
 
-connection.connect((err) => {
-    if (err) {
-        console.log(err);
-        return;
-    }
-
-    console.log("Connected to MySQL!");
+const mealSchema = new mongoose.Schema({
+    accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
+    mealName: String,
+    calories: Number,
+    mealDate: Date
 });
+const Meal = mongoose.model("Meal", mealSchema, "meals");
 
-// Promise wrapper, used for the dashboard route where several
-// independent queries need to be awaited together.
-const db = connection.promise();
+const waterGoalSchema = new mongoose.Schema({
+    accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account", unique: true },
+    goalMl: Number
+});
+const WaterGoal = mongoose.model("WaterGoal", waterGoalSchema, "watergoals");
+
+const waterLogSchema = new mongoose.Schema({
+    accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
+    amountMl: Number,
+    loggedAt: { type: Date, default: Date.now }
+});
+const WaterLog = mongoose.model("WaterLog", waterLogSchema, "waterlogs");
+
+const workoutSchema = new mongoose.Schema({
+    accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
+    activity: String,
+    minutes: Number,
+    caloriesBurned: Number,
+    workoutDate: Date,
+    workoutTime: String
+});
+const Workout = mongoose.model("Workout", workoutSchema, "workout");
+
+const bmiSchema = new mongoose.Schema({
+    accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
+    height: Number,
+    weight: Number,
+    bmi: Number,
+    category: String,
+    recordDate: { type: Date, default: Date.now }
+});
+const Bmi = mongoose.model("Bmi", bmiSchema, "bmi");
 
 // ==========================
 // Middleware
@@ -43,6 +80,15 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use(express.static(path.join(__dirname, "public")));
+
+// Helper: start of today and end of today
+function todayRange() {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+}
 
 // ==========================
 // Auth Middleware
@@ -58,51 +104,56 @@ function requireLogin(req, res, next) {
 }
 
 // ==========================
-// Dashboard
+// Dashboardw
 // ==========================
 app.get("/", requireLogin, async (req, res) => {
 
-    const accountId = req.session.account.accountId;
+    const accountId = req.session.account._id;
     const calorieGoal = 2200;
 
     try {
 
-        const [todayMeals] = await db.query(
-            `SELECT * FROM meals WHERE accountId=? AND mealDate=CURDATE()`,
-            [accountId]
-        );
+        const { start, end } = todayRange();
 
-        const [weekMeals] = await db.query(
-            `SELECT mealDate, SUM(calories) AS total
-             FROM meals
-             WHERE accountId=? AND mealDate >= (CURDATE() - INTERVAL 6 DAY)
-             GROUP BY mealDate`,
-            [accountId]
-        );
+        const todayMeals = await Meal.find({
+            accountId,
+            mealDate: { $gte: start, $lte: end }
+        }).lean();
 
-        const [goalRows] = await db.query(
-            `SELECT goalMl FROM water_goal WHERE accountId=?`,
-            [accountId]
-        );
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - 6);
+        weekStart.setHours(0, 0, 0, 0);
 
-        const [waterRows] = await db.query(
-            `SELECT SUM(amountMl) AS total
-             FROM water_log
-             WHERE accountId=? AND DATE(loggedAt)=CURDATE()`,
-            [accountId]
-        );
+        const weekMealsRaw = await Meal.find({
+            accountId,
+            mealDate: { $gte: weekStart }
+        }).lean();
 
-        const [workoutRows] = await db.query(
-            `SELECT SUM(minutes) AS totalMinutes, SUM(caloriesBurned) AS totalCalories
-             FROM workouts
-             WHERE accountId=? AND workoutDate=CURDATE()`,
-            [accountId]
-        );
+        // Group by day and sum calories
+        const weekMap = {};
+        weekMealsRaw.forEach(meal => {
+            const iso = new Date(meal.mealDate).toISOString().split("T")[0];
+            if (!weekMap[iso]) weekMap[iso] = 0;
+            weekMap[iso] += Number(meal.calories);
+        });
 
-        const [bmiHistory] = await db.query(
-            `SELECT * FROM bmi WHERE accountId=? ORDER BY recordDate ASC`,
-            [accountId]
-        );
+        const goalDoc = await WaterGoal.findOne({ accountId }).lean();
+        const waterGoal = goalDoc ? goalDoc.goalMl : 2000;
+
+        const waterLogs = await WaterLog.find({
+            accountId,
+            loggedAt: { $gte: start, $lte: end }
+        }).lean();
+        const waterConsumed = waterLogs.reduce((sum, log) => sum + Number(log.amountMl), 0);
+
+        const workouts = await Workout.find({
+            accountId,
+            workoutDate: { $gte: start, $lte: end }
+        }).lean();
+        const workoutMinutes = workouts.reduce((s, w) => s + Number(w.minutes), 0);
+        const workoutCalories = workouts.reduce((s, w) => s + Number(w.caloriesBurned), 0);
+
+        const bmiHistory = await Bmi.find({ accountId }).sort({ recordDate: 1 }).lean();
 
         // Build the last 7 calendar days (oldest -> today) with that day's total calories
         const weekCalories = [];
@@ -113,23 +164,14 @@ app.get("/", requireLogin, async (req, res) => {
             d.setDate(d.getDate() - i);
             const iso = d.toISOString().split("T")[0];
 
-            const match = weekMeals.find((row) => {
-                const rowDate = row.mealDate instanceof Date
-                    ? row.mealDate.toISOString().split("T")[0]
-                    : String(row.mealDate);
-                return rowDate === iso;
-            });
-
             weekCalories.push({
                 label: i === 0 ? "Today" : d.toLocaleDateString("en-US", { weekday: "short" }),
-                total: match ? Number(match.total) : 0
+                total: weekMap[iso] || 0
             });
 
         }
 
         const todayCalories = todayMeals.reduce((sum, meal) => sum + Number(meal.calories), 0);
-        const waterGoal = goalRows.length > 0 ? goalRows[0].goalMl : 2000;
-        const waterConsumed = waterRows[0].total || 0;
 
         res.render("index", {
             account: req.session.account,
@@ -138,8 +180,8 @@ app.get("/", requireLogin, async (req, res) => {
             mealsLoggedToday: todayMeals.length,
             waterGoal,
             waterConsumed,
-            workoutMinutes: workoutRows[0].totalMinutes || 0,
-            workoutCalories: workoutRows[0].totalCalories || 0,
+            workoutMinutes,
+            workoutCalories,
             latestBmi: bmiHistory.length > 0 ? bmiHistory[bmiHistory.length - 1] : null,
             bmiTrend: bmiHistory.slice(-6),
             weekCalories
@@ -176,41 +218,25 @@ app.get("/addMeal", requireLogin, (req, res) => {
 });
 
 
-app.post("/addMeal", requireLogin, (req, res) => {
+app.post("/addMeal", requireLogin, async (req, res) => {
 
     const { mealName, calories, mealDate } = req.body;
 
-    const accountId = req.session.account.accountId;
+    try {
 
-
-    const sql = `
-        INSERT INTO meals
-        (accountId, mealName, calories, mealDate)
-        VALUES (?, ?, ?, ?)
-    `;
-
-
-    connection.query(
-        sql,
-        [
-            accountId,
+        await Meal.create({
+            accountId: req.session.account._id,
             mealName,
-            calories,
-            mealDate
-        ],
+            calories: Number(calories),
+            mealDate: new Date(mealDate)
+        });
 
-        (err) => {
+        res.redirect("/foodhistory");
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-
-            res.redirect("/foodhistory");
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -218,32 +244,24 @@ app.post("/addMeal", requireLogin, (req, res) => {
 // Food History
 // ==========================
 
-app.get("/foodhistory", requireLogin, (req, res) => {
+app.get("/foodhistory", requireLogin, async (req, res) => {
 
-    const sql = `
-        SELECT *
-        FROM meals
-        WHERE accountId = ?
-        ORDER BY mealDate DESC
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [req.session.account.accountId],
-        (err, results) => {
+        const meals = await Meal
+            .find({ accountId: req.session.account._id })
+            .sort({ mealDate: -1 })
+            .lean();
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+        res.render("foodhistory", {
+            meals,
+            account: req.session.account
+        });
 
-            res.render("foodhistory", {
-                meals: results,
-                account: req.session.account
-            });
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -251,10 +269,9 @@ app.get("/foodhistory", requireLogin, (req, res) => {
 // Search Meals
 // ==========================
 
-app.get("/searchMeal", requireLogin, (req, res) => {
+app.get("/searchMeal", requireLogin, async (req, res) => {
 
     const search = req.query.search;
-
 
     if (!search) {
 
@@ -266,138 +283,100 @@ app.get("/searchMeal", requireLogin, (req, res) => {
 
     }
 
+    try {
 
-    const sql = `
-        SELECT *
-        FROM meals
-        WHERE accountId = ?
-        AND mealName LIKE ?
-        ORDER BY mealDate DESC
-    `;
+        const meals = await Meal
+            .find({
+                accountId: req.session.account._id,
+                mealName: { $regex: search, $options: "i" }
+            })
+            .sort({ mealDate: -1 })
+            .lean();
 
+        res.render("searchmeal", {
+            meals,
+            search,
+            account: req.session.account
+        });
 
-    connection.query(
-        sql,
-        [
-            req.session.account.accountId,
-            `%${search}%`
-        ],
-
-        (err, results) => {
-
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-            res.render("searchmeal", {
-                meals: results,
-                search: search,
-                account: req.session.account
-            });
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
 // ==========================
 // Edit Meals
 // ==========================
-app.get("/editMeal", requireLogin, (req, res) => {
+app.get("/editMeal", requireLogin, async (req, res) => {
 
-    const sql = `
-        SELECT *
-        FROM meals
-        WHERE accountId = ?
-        ORDER BY mealDate DESC
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [req.session.account.accountId],
-        (err, results) => {
+        const meals = await Meal
+            .find({ accountId: req.session.account._id })
+            .sort({ mealDate: -1 })
+            .lean();
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+        res.render("editmeal", {
+            meals,
+            account: req.session.account
+        });
 
-            res.render("editmeal", {
-                meals: results,
-                account: req.session.account
-            });
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
 // ==========================
 // Update Meal
 // ==========================
-app.post("/editMeal/:id", requireLogin, (req, res) => {
+app.post("/editMeal/:id", requireLogin, async (req, res) => {
 
     const { mealName, calories, mealDate } = req.body;
 
-    const sql = `
-        UPDATE meals
-        SET mealName=?, calories=?, mealDate=?
-        WHERE mealId=?
-        AND accountId=?
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [
-            mealName,
-            calories,
-            mealDate,
-            req.params.id,
-            req.session.account.accountId
-        ],
-        (err) => {
-
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
+        await Meal.updateOne(
+            { _id: req.params.id, accountId: req.session.account._id },
+            {
+                $set: {
+                    mealName,
+                    calories: Number(calories),
+                    mealDate: new Date(mealDate)
+                }
             }
+        );
 
-            res.redirect("/editMeal");
+        res.redirect("/editMeal");
 
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
 // ==========================
 // Delete Meal
 // ==========================
-app.post("/deleteMeal/:id", requireLogin, (req, res) => {
+app.post("/deleteMeal/:id", requireLogin, async (req, res) => {
 
-    const sql = `
-        DELETE FROM meals
-        WHERE mealId=?
-        AND accountId=?
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [
-            req.params.id,
-            req.session.account.accountId
-        ],
-        (err) => {
+        await Meal.deleteOne({
+            _id: req.params.id,
+            accountId: req.session.account._id
+        });
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+        res.redirect("/editMeal");
 
-            res.redirect("/editMeal");
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -405,69 +384,42 @@ app.post("/deleteMeal/:id", requireLogin, (req, res) => {
 // Water Dashboard
 // ==========================
 
-app.get("/water", requireLogin, (req, res) => {
+app.get("/water", requireLogin, async (req, res) => {
 
-    const accountId = req.session.account.accountId;
+    const accountId = req.session.account._id;
 
-    const goalSQL = `
-        SELECT goalMl
-        FROM water_goal
-        WHERE accountId=?
-    `;
+    try {
 
-    connection.query(goalSQL, [accountId], (err, goalResult) => {
+        const { start, end } = todayRange();
 
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
-        }
+        const goalDoc = await WaterGoal.findOne({ accountId }).lean();
+        const goal = goalDoc ? goalDoc.goalMl : 2000;
 
-        let goal = 2000;
+        const logs = await WaterLog
+            .find({
+                accountId,
+                loggedAt: { $gte: start, $lte: end }
+            })
+            .sort({ loggedAt: -1 })
+            .lean();
 
-        if (goalResult.length > 0) {
-            goal = goalResult[0].goalMl;
-        }
+        const consumed = logs.reduce((sum, log) => sum + Number(log.amountMl), 0);
+        const remaining = Math.max(goal - consumed, 0);
+        const pct = Math.min(Math.round((consumed / goal) * 100), 100);
 
-        const logSQL = `
-            SELECT *
-            FROM water_log
-            WHERE accountId=?
-            AND DATE(loggedAt)=CURDATE()
-            ORDER BY loggedAt DESC
-        `;
-
-        connection.query(logSQL, [accountId], (err, logs) => {
-
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-            let consumed = 0;
-
-            logs.forEach(log => {
-                consumed += log.amountMl;
-            });
-
-            const remaining = Math.max(goal - consumed, 0);
-
-            const pct = Math.min(
-                Math.round((consumed / goal) * 100),
-                100
-            );
-
-            res.render("water", {
-                goal,
-                consumed,
-                remaining,
-                pct,
-                logs,
-                account: req.session.account
-            });
-
+        res.render("water", {
+            goal,
+            consumed,
+            remaining,
+            pct,
+            logs,
+            account: req.session.account
         });
 
-    });
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -475,60 +427,38 @@ app.get("/water", requireLogin, (req, res) => {
 // Add Water
 // ==========================
 
-app.get("/water-add", requireLogin, (req, res) => {
+app.get("/water-add", requireLogin, async (req, res) => {
 
-    const accountId = req.session.account.accountId;
+    const accountId = req.session.account._id;
 
-    const goalSQL = `
-        SELECT goalMl
-        FROM water_goal
-        WHERE accountId=?
-    `;
+    try {
 
-    connection.query(goalSQL, [accountId], (err, goalResult) => {
+        const { start, end } = todayRange();
 
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
-        }
+        const goalDoc = await WaterGoal.findOne({ accountId }).lean();
+        const goal = goalDoc ? goalDoc.goalMl : 2000;
 
-        let goal = 2000;
+        const logs = await WaterLog.find({
+            accountId,
+            loggedAt: { $gte: start, $lte: end }
+        }).lean();
 
-        if (goalResult.length > 0) {
-            goal = goalResult[0].goalMl;
-        }
+        const consumed = logs.reduce((sum, log) => sum + Number(log.amountMl), 0);
 
-        const waterSQL = `
-            SELECT SUM(amountMl) AS total
-            FROM water_log
-            WHERE accountId=?
-            AND DATE(loggedAt)=CURDATE()
-        `;
-
-        connection.query(waterSQL, [accountId], (err, results) => {
-
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-            const consumed = results[0].total || 0;
-
-            res.render("addwater", {
-                goal,
-                consumed,
-                account: req.session.account
-            });
-
+        res.render("addwater", {
+            goal,
+            consumed,
+            account: req.session.account
         });
 
-    });
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
-app.post("/water-add", requireLogin, (req, res) => {
-
-    const accountId = req.session.account.accountId;
+app.post("/water-add", requireLogin, async (req, res) => {
 
     const amount = parseInt(req.body.amount);
 
@@ -536,22 +466,19 @@ app.post("/water-add", requireLogin, (req, res) => {
         return res.redirect("/water");
     }
 
-    const sql = `
-        INSERT INTO water_log
-        (accountId, amountMl)
-        VALUES (?, ?)
-    `;
+    try {
 
-    connection.query(sql, [accountId, amount], (err) => {
-
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
-        }
+        await WaterLog.create({
+            accountId: req.session.account._id,
+            amountMl: amount
+        });
 
         res.redirect("/water");
 
-    });
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -559,55 +486,39 @@ app.post("/water-add", requireLogin, (req, res) => {
 // Water History
 // ==========================
 
-app.get("/water-history", requireLogin, (req, res) => {
+app.get("/water-history", requireLogin, async (req, res) => {
 
-    const accountId = req.session.account.accountId;
+    const accountId = req.session.account._id;
 
-    const goalSQL = `
-        SELECT goalMl
-        FROM water_goal
-        WHERE accountId=?
-    `;
+    try {
 
-    connection.query(goalSQL, [accountId], (err, goalResult) => {
+        const goalDoc = await WaterGoal.findOne({ accountId }).lean();
+        const goal = goalDoc ? goalDoc.goalMl : 2000;
 
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
-        }
+        const logs = await WaterLog.find({ accountId }).sort({ loggedAt: -1 }).lean();
 
-        let goal = 2000;
-
-        if (goalResult.length > 0) {
-            goal = goalResult[0].goalMl;
-        }
-
-        const sql = `
-            SELECT
-                DATE(loggedAt) AS logDate,
-                SUM(amountMl) AS total
-            FROM water_log
-            WHERE accountId=?
-            GROUP BY DATE(loggedAt)
-            ORDER BY logDate DESC
-        `;
-
-        connection.query(sql, [accountId], (err, results) => {
-
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-            res.render("waterhistory", {
-                days: results,
-                goal,
-                account: req.session.account
-            });
-
+        // Group by day
+        const dayMap = {};
+        logs.forEach(log => {
+            const iso = new Date(log.loggedAt).toISOString().split("T")[0];
+            if (!dayMap[iso]) dayMap[iso] = 0;
+            dayMap[iso] += Number(log.amountMl);
         });
 
-    });
+        const days = Object.keys(dayMap)
+            .sort((a, b) => new Date(b) - new Date(a))
+            .map(iso => ({ logDate: iso, total: dayMap[iso] }));
+
+        res.render("waterhistory", {
+            days,
+            goal,
+            account: req.session.account
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -615,28 +526,21 @@ app.get("/water-history", requireLogin, (req, res) => {
 // Delete Water
 // ==========================
 
-app.post("/water-delete/:id", requireLogin, (req, res) => {
+app.post("/water-delete/:id", requireLogin, async (req, res) => {
 
-    const sql = `
-        DELETE FROM water_log
-        WHERE waterId=?
-        AND accountId=?
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [req.params.id, req.session.account.accountId],
-        (err) => {
+        await WaterLog.deleteOne({
+            _id: req.params.id,
+            accountId: req.session.account._id
+        });
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+        res.redirect("/water");
 
-            res.redirect("/water");
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -644,34 +548,29 @@ app.post("/water-delete/:id", requireLogin, (req, res) => {
 // Update Water Goal
 // ==========================
 
-app.post("/water-goal", requireLogin, (req, res) => {
+app.post("/water-goal", requireLogin, async (req, res) => {
 
-    const accountId = req.session.account.accountId;
-
+    const accountId = req.session.account._id;
     const goalMl = parseInt(req.body.goalMl);
 
     if (!goalMl || goalMl < 250) {
         return res.redirect("/water");
     }
 
-    const sql = `
-        INSERT INTO water_goal
-        (accountId, goalMl)
-        VALUES (?, ?)
-        ON DUPLICATE KEY UPDATE
-        goalMl = VALUES(goalMl)
-    `;
+    try {
 
-    connection.query(sql, [accountId, goalMl], (err) => {
-
-        if (err) {
-            console.log(err);
-            return res.send("Database Error");
-        }
+        await WaterGoal.updateOne(
+            { accountId },
+            { $set: { goalMl } },
+            { upsert: true }
+        );
 
         res.redirect("/water");
 
-    });
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -681,13 +580,13 @@ app.post("/water-goal", requireLogin, (req, res) => {
 
 app.get("/addWorkout", requireLogin, (req, res) => {
 
-    res.render("addWorkout", {
+    res.render("addworkout", {
         account: req.session.account
     });
 
 });
 
-app.post("/addWorkout", requireLogin, (req, res) => {
+app.post("/addWorkout", requireLogin, async (req, res) => {
 
     const {
         activity,
@@ -697,40 +596,23 @@ app.post("/addWorkout", requireLogin, (req, res) => {
         workoutTime
     } = req.body;
 
-    const sql = `
-        INSERT INTO workouts
-        (
-            accountId,
+    try {
+
+        await Workout.create({
+            accountId: req.session.account._id,
             activity,
-            minutes,
-            caloriesBurned,
-            workoutDate,
+            minutes: Number(minutes),
+            caloriesBurned: Number(caloriesBurned),
+            workoutDate: new Date(workoutDate),
             workoutTime
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-    `;
+        });
 
-    connection.query(
-        sql,
-        [
-            req.session.account.accountId,
-            activity,
-            minutes,
-            caloriesBurned,
-            workoutDate,
-            workoutTime
-        ],
-        (err) => {
+        res.redirect("/exerciseHistory");
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-            res.redirect("/exerciseHistory");
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -738,32 +620,24 @@ app.post("/addWorkout", requireLogin, (req, res) => {
 // Exercise History
 // ==========================
 
-app.get("/exerciseHistory", requireLogin, (req, res) => {
+app.get("/exerciseHistory", requireLogin, async (req, res) => {
 
-    const sql = `
-        SELECT *
-        FROM workouts
-        WHERE accountId = ?
-        ORDER BY workoutDate DESC, workoutTime DESC
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [req.session.account.accountId],
-        (err, results) => {
+        const workouts = await Workout
+            .find({ accountId: req.session.account._id })
+            .sort({ workoutDate: -1, workoutTime: -1 })
+            .lean();
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+        res.render("excercisehistory", {
+            workouts,
+            account: req.session.account
+        });
 
-            res.render("excercisehistory", {
-                workouts: results,
-                account: req.session.account
-            });
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -771,36 +645,28 @@ app.get("/exerciseHistory", requireLogin, (req, res) => {
 // Edit Workout
 // ==========================
 
-app.get("/editWorkout/:id", requireLogin, (req, res) => {
+app.get("/editWorkout/:id", requireLogin, async (req, res) => {
 
-    const sql = `
-        SELECT *
-        FROM workouts
-        WHERE workoutId = ?
-        AND accountId = ?
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [req.params.id, req.session.account.accountId],
-        (err, results) => {
+        const workout = await Workout.findOne({
+            _id: req.params.id,
+            accountId: req.session.account._id
+        }).lean();
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-            if (results.length === 0) {
-                return res.redirect("/exerciseHistory");
-            }
-
-            res.render("editWorkout", {
-                workout: results[0],
-                account: req.session.account
-            });
-
+        if (!workout) {
+            return res.redirect("/exerciseHistory");
         }
-    );
+
+        res.render("editworkout", {
+            workout,
+            account: req.session.account
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -808,7 +674,7 @@ app.get("/editWorkout/:id", requireLogin, (req, res) => {
 // Update Workout
 // ==========================
 
-app.post("/editWorkout/:id", requireLogin, (req, res) => {
+app.post("/editWorkout/:id", requireLogin, async (req, res) => {
 
     const {
         activity,
@@ -818,40 +684,27 @@ app.post("/editWorkout/:id", requireLogin, (req, res) => {
         workoutTime
     } = req.body;
 
-    const sql = `
-        UPDATE workouts
-        SET
-            activity = ?,
-            minutes = ?,
-            caloriesBurned = ?,
-            workoutDate = ?,
-            workoutTime = ?
-        WHERE workoutId = ?
-        AND accountId = ?
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [
-            activity,
-            minutes,
-            caloriesBurned,
-            workoutDate,
-            workoutTime,
-            req.params.id,
-            req.session.account.accountId
-        ],
-        (err) => {
-
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
+        await Workout.updateOne(
+            { _id: req.params.id, accountId: req.session.account._id },
+            {
+                $set: {
+                    activity,
+                    minutes: Number(minutes),
+                    caloriesBurned: Number(caloriesBurned),
+                    workoutDate: new Date(workoutDate),
+                    workoutTime
+                }
             }
+        );
 
-            res.redirect("/exerciseHistory");
+        res.redirect("/exerciseHistory");
 
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -859,28 +712,21 @@ app.post("/editWorkout/:id", requireLogin, (req, res) => {
 // Delete Workout
 // ==========================
 
-app.post("/deleteWorkout/:id", requireLogin, (req, res) => {
+app.post("/deleteWorkout/:id", requireLogin, async (req, res) => {
 
-    const sql = `
-        DELETE FROM workouts
-        WHERE workoutId = ?
-        AND accountId = ?
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [req.params.id, req.session.account.accountId],
-        (err) => {
+        await Workout.deleteOne({
+            _id: req.params.id,
+            accountId: req.session.account._id
+        });
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+        res.redirect("/exerciseHistory");
 
-            res.redirect("/exerciseHistory");
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -888,32 +734,24 @@ app.post("/deleteWorkout/:id", requireLogin, (req, res) => {
 // BMI Tracker
 // ==========================
 
-app.get("/bmi", requireLogin, (req, res) => {
+app.get("/bmi", requireLogin, async (req, res) => {
 
-    const sql = `
-        SELECT *
-        FROM bmi
-        WHERE accountId = ?
-        ORDER BY recordDate ASC
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [req.session.account.accountId],
-        (err, results) => {
+        const history = await Bmi
+            .find({ accountId: req.session.account._id })
+            .sort({ recordDate: 1 })
+            .lean();
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+        res.render("bmi", {
+            history,
+            account: req.session.account
+        });
 
-            res.render("bmi", {
-                history: results,
-                account: req.session.account
-            });
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -921,43 +759,27 @@ app.get("/bmi", requireLogin, (req, res) => {
 // Save BMI
 // ==========================
 
-app.post("/bmi", requireLogin, (req, res) => {
+app.post("/bmi", requireLogin, async (req, res) => {
 
     const { height, weight, bmi, category } = req.body;
 
-    const sql = `
-        INSERT INTO bmi
-        (
-            accountId,
-            height,
-            weight,
-            bmi,
+    try {
+
+        await Bmi.create({
+            accountId: req.session.account._id,
+            height: Number(height),
+            weight: Number(weight),
+            bmi: Number(bmi),
             category,
-            recordDate
-        )
-        VALUES (?, ?, ?, ?, ?, CURDATE())
-    `;
+            recordDate: new Date()
+        });
 
-    connection.query(
-        sql,
-        [
-            req.session.account.accountId,
-            height,
-            weight,
-            bmi,
-            category
-        ],
-        (err) => {
+        res.redirect("/bmi");
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-
-            res.redirect("/bmi");
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -965,28 +787,21 @@ app.post("/bmi", requireLogin, (req, res) => {
 // Delete BMI
 // ==========================
 
-app.post("/deleteBMI/:id", requireLogin, (req, res) => {
+app.post("/deleteBMI/:id", requireLogin, async (req, res) => {
 
-    const sql = `
-        DELETE FROM bmi
-        WHERE bmiId = ?
-        AND accountId = ?
-    `;
+    try {
 
-    connection.query(
-        sql,
-        [req.params.id, req.session.account.accountId],
-        (err) => {
+        await Bmi.deleteOne({
+            _id: req.params.id,
+            accountId: req.session.account._id
+        });
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+        res.redirect("/bmi");
 
-            res.redirect("/bmi");
-
-        }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 
 });
 
@@ -1014,27 +829,36 @@ app.get("/login", (req, res) => {
     });
 });
 
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
     const { email, password } = req.body;
-    connection.query(
-        "SELECT * FROM account WHERE email = ? AND password = SHA2(?, 256)",
-        [email.toLowerCase(), password],
-        (err, results) => {
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
 
-            if (results.length === 0) {
-                return res.render("login", {
-                    error: "Invalid email or password."
-                });
-            }
+    try {
 
-            req.session.account = results[0];
-            res.redirect("/");
+        const account = await Account.findOne({
+            email: email.toLowerCase()
+        }).lean();
+
+        if (!account) {
+            return res.render("login", {
+                error: "Invalid email or password."
+            });
         }
-    );
+
+        const passwordMatches = await bcrypt.compare(password, account.password);
+
+        if (!passwordMatches) {
+            return res.render("login", {
+                error: "Invalid email or password."
+            });
+        }
+
+        req.session.account = account;
+        res.redirect("/");
+
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 });
 
 // ==========================
@@ -1044,7 +868,7 @@ app.get("/forgot-password", (req, res) => {
     res.render("forgot-password", { error: null, success: null });
 });
 
-app.post("/forgot-password", (req, res) => {
+app.post("/forgot-password", async (req, res) => {
     const { email, newPassword, confirmPassword } = req.body;
 
     if (!email || !newPassword || !confirmPassword) {
@@ -1068,54 +892,41 @@ app.post("/forgot-password", (req, res) => {
         });
     }
 
-    connection.query(
-        "SELECT * FROM account WHERE email = ?",
-        [email.toLowerCase()],
-        (err, results) => {
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
+    try {
 
-            if (results.length === 0) {
-                return res.render("forgot-password", {
-                    error: "No account found with that email.",
-                    success: null
-                });
-            }
+        const account = await Account.findOne({
+            email: email.toLowerCase()
+        }).lean();
 
-            connection.query(
-                "SELECT * FROM account WHERE email = ? AND password = SHA2(?, 256)",
-                [email.toLowerCase(), newPassword],
-                (err, sameResults) => {
-                    if (err) {
-                        console.log(err);
-                        return res.send("Database Error");
-                    }
-
-                    if (sameResults.length > 0) {
-                        return res.render("forgot-password", {
-                            error: "New password must be different from your current password.",
-                            success: null
-                        });
-                    }
-
-                    connection.query(
-                        "UPDATE account SET password = SHA2(?, 256) WHERE email = ?",
-                        [newPassword, email.toLowerCase()],
-                        (err) => {
-                            if (err) {
-                                console.log(err);
-                                return res.send("Database Error");
-                            }
-
-                            res.redirect("/login?reset=success");
-                        }
-                    );
-                }
-            );
+        if (!account) {
+            return res.render("forgot-password", {
+                error: "No account found with that email.",
+                success: null
+            });
         }
-    );
+
+        const sameAsCurrent = await bcrypt.compare(newPassword, account.password);
+
+        if (sameAsCurrent) {
+            return res.render("forgot-password", {
+                error: "New password must be different from your current password.",
+                success: null
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await Account.updateOne(
+            { email: email.toLowerCase() },
+            { $set: { password: hashedPassword } }
+        );
+
+        res.redirect("/login?reset=success");
+
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 });
 
 // ==========================
@@ -1125,7 +936,7 @@ app.get("/signup", (req, res) => {
     res.render("signup", { error: null });
 });
 
-app.post("/signup", (req, res) => {
+app.post("/signup", async (req, res) => {
     const { username, email, password, confirmPassword } = req.body;
 
     if (!username || !email || !password || !confirmPassword) {
@@ -1140,34 +951,32 @@ app.post("/signup", (req, res) => {
         });
     }
 
-    connection.query(
-        "SELECT * FROM account WHERE email = ?",
-        [email.toLowerCase()],
-        (err, results) => {
+    try {
 
-            if (err) {
-                console.log(err);
-                return res.send("Database Error");
-            }
-            if (results.length > 0) {
-                return res.render("signup", {
-                    error: "Email already exists."
-                }); 
-            }
-            connection.query(
-                "INSERT INTO account (username, email, password) VALUES (?, ?, SHA2(?, 256))",
-                [username, email.toLowerCase(), password],
-                (err) => {
-                    if (err) {
-                        console.log(err);
-                        return res.send("Database Error");
-                    }
+        const existing = await Account.findOne({
+            email: email.toLowerCase()
+        }).lean();
 
-                    res.redirect("/login");
-                }
-            );
+        if (existing) {
+            return res.render("signup", {
+                error: "Email already exists."
+            });
         }
-    );
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await Account.create({
+            username,
+            email: email.toLowerCase(),
+            password: hashedPassword
+        });
+
+        res.redirect("/login");
+
+    } catch (err) {
+        console.log(err);
+        return res.send("Database Error");
+    }
 });
 
 // ==========================
@@ -1184,6 +993,9 @@ app.get("/logout", (req, res) => {
 // ==========================
 const PORT = 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+
+// ==========================
+// Export App for Testing
+// ==========================
+
+module.exports = app;

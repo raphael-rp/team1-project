@@ -93,7 +93,7 @@
 
                             <td>
 
-                                <a href="/editWorkout/<%= workout.workoutId %>">
+                                <a href="/editWorkout/<%= workout._id %>">
 
                                     <button>
 
@@ -104,7 +104,7 @@
                                 </a>
 
                                 <form
-                                    action="/deleteWorkout/<%= workout.workoutId %>"
+                                    action="/deleteWorkout/<%= workout._id %>"
                                     method="POST"
                                     style="display:inline;"
                                 >

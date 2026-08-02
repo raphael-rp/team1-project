@@ -45,7 +45,7 @@
 <div class="meal-card">
 
 
-<form action="/editMeal/<%= meal.mealId %>" method="POST">
+<form action="/editMeal/<%= meal._id %>" method="POST">
 
 
 <label>
@@ -105,7 +105,7 @@
 
 
 <form
-action="/deleteMeal/<%= meal.mealId %>"
+action="/deleteMeal/<%= meal._id %>"
 method="POST"
 onsubmit="return confirm('Delete this meal?');"
 >
