@@ -10,7 +10,7 @@ const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-    secret: "fitness_secret_key",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false
 }));
